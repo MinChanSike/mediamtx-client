@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.stream-grid-cell:hover .stream-grid-overlay,
+.stream-grid-cell:focus-within .stream-grid-overlay {
+  opacity: 1;
+}
+
+.stream-grid-cell:hover .stream-grid-empty-copy,
+.stream-grid-cell:focus-visible .stream-grid-empty-copy {
+  opacity: 0.58;
+}

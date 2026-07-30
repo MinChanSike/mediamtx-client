@@ -1,0 +1,49 @@
+{
+  "name": "mediamtx-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^2.0.1",
+    "@fluentui/react-components": "^9.55.0",
+    "@fluentui/react-icons": "^2.0.237",
+    "hls.js": "^1.5.17",
+    "humanize-duration": "^3.34.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.0",
+    "swr": "^2.3.0",
+    "zod": "^3.24.0",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/humanize-duration": "^3.27.4",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/react-test-renderer": "18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.16.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "react-test-renderer": "18.3.1",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vite-plugin-singlefile": "^2.0.2"
+  }
+}
