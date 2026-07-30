@@ -20,8 +20,10 @@ import {
   Settings24Regular,
   Video24Regular,
 } from '@fluentui/react-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@src/components/common/ThemeToggle';
 import { useMediaMTXConfig } from '@src/hooks/useMediaMTXConfig';
+import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
 
@@ -34,13 +36,9 @@ type SidebarNavItem = {
   icon: React.ReactElement;
 };
 
-type SidebarHistory = {
-  pushState: (data: unknown, unused: string, url?: string | URL | null) => void;
-};
-
 const NAV_ITEMS: SidebarNavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', path: '/', icon: <Home24Regular /> },
-  { id: 'streams', label: 'Streams', path: '/streams', icon: <Video24Regular /> },
+  { id: 'dashboard', label: 'Dashboard', path: DASHBOARD_ROUTE, icon: <Home24Regular /> },
+  { id: 'streams', label: 'Streams', path: STREAMS_ROUTE, icon: <Video24Regular /> },
 ];
 
 const useStyles = makeStyles({
@@ -184,8 +182,8 @@ const useStyles = makeStyles({
   },
 });
 
-function pathToTab(pathname: string): NavTab {
-  if (pathname.startsWith('/streams')) return 'streams';
+export function pathToTab(pathname: string): NavTab {
+  if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`)) return 'streams';
   return 'dashboard';
 }
 
@@ -196,14 +194,16 @@ export function expandCollapsedSidebar(toggleSidebar: () => void) {
 export function navigateToSidebarItem(
   item: Pick<SidebarNavItem, 'id' | 'path'>,
   setActiveTab: (tab: NavTab) => void,
-  history: SidebarHistory = window.history
+  navigate: (path: string) => void
 ) {
   setActiveTab(item.id);
-  history.pushState(null, '', item.path);
+  navigate(item.path);
 }
 
 export default function AppSidebar() {
   const styles = useStyles();
+  const location = useLocation();
+  const navigate = useNavigate();
   const activeTab = useAppStore((s) => s.activeTab);
   const setActiveTab = useAppStore((s) => s.setActiveTab);
   const isSidebarCollapsed = useAppStore((s) => s.isSidebarCollapsed);
@@ -219,8 +219,8 @@ export default function AppSidebar() {
   }, [serverUrl]);
 
   useEffect(() => {
-    setActiveTab(pathToTab(window.location.pathname));
-  }, [setActiveTab]);
+    setActiveTab(pathToTab(location.pathname));
+  }, [location.pathname, setActiveTab]);
 
   const { isError, isPending } = useMediaMTXConfig();
 
@@ -228,7 +228,7 @@ export default function AppSidebar() {
 
   const handleNavSelect = (_event: unknown, data: OnNavItemSelectData) => {
     const item = NAV_ITEMS.find((candidate) => candidate.id === data.value);
-    if (item) navigateToSidebarItem(item, setActiveTab);
+    if (item) navigateToSidebarItem(item, setActiveTab, navigate);
   };
 
   const handleSave = () => {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { createElement } from 'react';
+import { createElement, Fragment } from 'react';
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from 'react-test-renderer';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import AppSidebar from '@src/components/layout/AppSidebar';
 import useAppStore from '@src/store/useAppStore';
 import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
@@ -9,6 +10,12 @@ const originalFetch = globalThis.fetch;
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
 
 let renderer: ReactTestRenderer | undefined;
+let currentRoutePathname = '/';
+
+function LocationRecorder() {
+  currentRoutePathname = useLocation().pathname;
+  return null;
+}
 
 function jsonResponse(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
@@ -58,9 +65,20 @@ async function flushMicrotasks() {
   }
 }
 
-async function renderSidebar() {
+async function renderSidebar(initialPath = '/') {
   await act(async () => {
-    renderer = create(createElement(AppSidebar));
+    renderer = create(
+      createElement(
+        MemoryRouter,
+        { initialEntries: [initialPath] },
+        createElement(
+          Fragment,
+          null,
+          createElement(AppSidebar),
+          createElement(LocationRecorder)
+        )
+      )
+    );
     await flushMicrotasks();
   });
 
@@ -87,6 +105,7 @@ function getPrimaryNav(root: ReactTestInstance) {
 
 beforeEach(() => {
   installGlobalConfigMock();
+  currentRoutePathname = '/';
   useMediaMTXApiStore.getState().resetForServerUrl('');
   useAppStore.setState({
     activeTab: 'dashboard',
@@ -148,22 +167,7 @@ describe('collapsed AppSidebar behavior', () => {
     expect(useAppStore.getState().isSidebarCollapsed).toBe(false);
   });
 
-  test('rendered collapsed navigation items keep labels and update active tab and history', async () => {
-    const pushedPaths: string[] = [];
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: {
-        history: {
-          pushState: (_state: unknown, _title: string, path: string) => {
-            pushedPaths.push(path);
-          },
-        },
-        location: {
-          pathname: '/',
-        },
-      },
-    });
-
+  test('rendered collapsed navigation items keep labels and navigate through React Router', async () => {
     await renderSidebar();
 
     const primaryNav = getPrimaryNav(renderer!.root);
@@ -187,7 +191,7 @@ describe('collapsed AppSidebar behavior', () => {
       await flushMicrotasks();
     });
     expect(useAppStore.getState().activeTab).toBe('streams');
-    expect(pushedPaths).toEqual(['/streams']);
+    expect(currentRoutePathname).toBe('/streams');
 
     await act(async () => {
       dashboardButton.props.onClick?.(clickEvent);
@@ -195,6 +199,12 @@ describe('collapsed AppSidebar behavior', () => {
       await flushMicrotasks();
     });
     expect(useAppStore.getState().activeTab).toBe('dashboard');
-    expect(pushedPaths).toEqual(['/streams', '/']);
+    expect(currentRoutePathname).toBe('/');
+  });
+
+  test('syncs collapsed sidebar selected state from the current route on initial render', async () => {
+    await renderSidebar('/streams');
+
+    expect(useAppStore.getState().activeTab).toBe('streams');
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import { SSRProvider } from '@fluentui/react-components';
 import { composeCompleteServerConfig } from '@src/api/configApi';
 import {
@@ -13,7 +14,9 @@ import useAppStore from '@src/store/useAppStore';
 import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
 
 function renderWithProviders(element: React.ReactElement) {
-  return renderToStaticMarkup(createElement(SSRProvider, null, element));
+  return renderToStaticMarkup(
+    createElement(SSRProvider, null, createElement(MemoryRouter, null, element))
+  );
 }
 
 const sampleConfig: GlobalConfig = {
@@ -130,12 +133,13 @@ describe('raw config toggle placement and state', () => {
     expect(sidebarSource).toContain('onClick={() => expandCollapsedSidebar(toggleSidebar)}');
   });
 
-  test('keeps collapsed sidebar navigation labels on the existing history navigation path', async () => {
+  test('keeps collapsed sidebar navigation labels on the React Router navigation path', async () => {
     const sidebarSource = await Bun.file('src/components/layout/AppSidebar.tsx').text();
 
     expect(sidebarSource).toContain('const handleNavSelect');
-    expect(sidebarSource).toContain('navigateToSidebarItem(item, setActiveTab)');
-    expect(sidebarSource).toContain("history.pushState(null, '', item.path)");
+    expect(sidebarSource).toContain('navigateToSidebarItem(item, setActiveTab, navigate)');
+    expect(sidebarSource).toContain('useNavigate');
+    expect(sidebarSource).not.toContain('history.pushState');
     expect(sidebarSource).toContain('onNavItemSelect={handleNavSelect}');
     expect(sidebarSource).toContain('value={item.id}');
     expect(sidebarSource).toContain('content={item.label}');

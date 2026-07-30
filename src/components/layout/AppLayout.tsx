@@ -1,7 +1,8 @@
 import { makeStyles, tokens } from '@fluentui/react-components';
-import useAppStore from '@src/store/useAppStore';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import AppSidebar from '@src/components/layout/AppSidebar';
 import DashboardPage from '@src/pages/DashboardPage';
+import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import StreamsPage from '@src/pages/StreamsPage';
 
 const useStyles = makeStyles({
@@ -33,9 +34,13 @@ const useStyles = makeStyles({
 });
 
 function PageContent() {
-  const activeTab = useAppStore((s) => s.activeTab);
-  if (activeTab === 'streams') return <StreamsPage />;
-  return <DashboardPage />;
+  return (
+    <Routes>
+      <Route path={DASHBOARD_ROUTE} element={<DashboardPage />} />
+      <Route path={STREAMS_ROUTE} element={<StreamsPage />} />
+      <Route path="*" element={<Navigate to={DASHBOARD_ROUTE} replace />} />
+    </Routes>
+  );
 }
 
 export default function AppLayout() {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import {
   ProtocolRow,
   getApiAvailabilityStatus,
@@ -184,7 +185,9 @@ describe('Server dashboard listener model', () => {
 describe('Server dashboard metrics model', () => {
   test('removes stream counters and their path-derived implementation from the sidebar', async () => {
     useAppStore.setState({ isSidebarCollapsed: false });
-    const markup = renderToStaticMarkup(createElement(AppSidebar));
+    const markup = renderToStaticMarkup(
+      createElement(MemoryRouter, null, createElement(AppSidebar))
+    );
     const source = await Bun.file('src/components/layout/AppSidebar.tsx').text();
 
     expect(markup).not.toContain('Stream counters');
