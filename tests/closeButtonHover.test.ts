@@ -58,10 +58,6 @@ const dismissButtons = [
     path: 'src/components/streams/MultiPlayerGrid.tsx',
     marker: 'aria-label="Close"',
   },
-  {
-    path: 'src/components/layout/AppHeader.tsx',
-    marker: 'aria-label="Cancel MediaMTX API endpoint edit"',
-  },
 ];
 
 describe('close button hover affordance', () => {
@@ -92,15 +88,12 @@ describe('close button hover affordance', () => {
   });
 
   test('does not apply red hover styling to unrelated icon buttons', () => {
-    const appHeader = source('src/components/layout/AppHeader.tsx');
     const dashboardPage = source('src/pages/DashboardPage.tsx');
     const videoPlayer = source('src/components/streams/VideoPlayer.tsx');
     const addDrawer = source('src/components/streams/AddStreamDrawer.tsx');
     const editDrawer = source('src/components/streams/EditStreamDrawer.tsx');
 
     for (const [sourceText, marker] of [
-      [appHeader, 'icon={<Checkmark24Regular />}'],
-      [appHeader, 'icon={<Edit24Regular />}'],
       [dashboardPage, 'icon={<Code20Regular />}'],
       [videoPlayer, 'icon={<ArrowClockwise24Regular />}'],
       [videoPlayer, 'icon={<FullScreenMaximize24Regular />}'],

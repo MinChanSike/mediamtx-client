@@ -58,7 +58,6 @@ describe('Server dashboard listener model', () => {
     const helperSource = await Bun.file('src/utils/apiAvailabilityStatus.ts').text();
     const statusSurfaces = [
       'src/components/dashboard/ServerStatusCard.tsx',
-      'src/components/layout/AppHeader.tsx',
       'src/components/layout/AppSidebar.tsx',
     ];
 

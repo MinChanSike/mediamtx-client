@@ -1152,7 +1152,6 @@ describe('MediaMTX API Zustand store integration', () => {
       'src/hooks/useEditStream.ts',
       'src/hooks/useDeleteStream.ts',
       'src/hooks/useKickStreamTarget.ts',
-      'src/components/layout/AppHeader.tsx',
       'src/components/layout/AppSidebar.tsx',
       'src/components/streams/StreamDetailsDrawer.tsx',
       'src/components/streams/ViewerDetailsDrawer.tsx',
