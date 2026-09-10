@@ -13,8 +13,6 @@ import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
 import usePlayerStore from '@src/store/usePlayerStore';
 import VideoPlayer from '@src/components/streams/VideoPlayer';
 import PlaybackUrls from '@src/components/streams/PlaybackUrls';
-import type { PathItem } from '@src/types/stream';
-import { getDisplayProtocol } from '@src/utils/streamDisplay';
 
 const useStyles = makeStyles({
   body: {
@@ -27,36 +25,7 @@ const useStyles = makeStyles({
     aspectRatio: '16 / 9',
     borderRadius: tokens.borderRadiusNone,
   },
-  metrics: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-    gap: tokens.spacingHorizontalS,
-    paddingBlock: tokens.spacingVerticalS,
-    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-  },
-  metricItem: {
-    minWidth: 0,
-  },
-  metricLabel: {
-    color: tokens.colorNeutralForeground3,
-    textTransform: 'uppercase',
-  },
 });
-
-export function getSinglePlayerMetrics(stream: PathItem) {
-  const inboundBytes = stream.inboundBytes ?? stream.bytesReceived;
-  const outboundBytes = stream.outboundBytes ?? stream.bytesSent;
-
-  return [
-    { label: 'Protocol', value: getDisplayProtocol(stream).toUpperCase() },
-    { label: 'Track Count', value: String(stream.tracks.length) },
-    {
-      label: 'Bytes In/Out',
-      value: `${inboundBytes.toLocaleString()} / ${outboundBytes.toLocaleString()}`,
-    },
-    { label: 'Total Readers', value: String(stream.readers.length) },
-  ];
-}
 
 export default function SinglePlayerDrawer() {
   const styles = useStyles();
