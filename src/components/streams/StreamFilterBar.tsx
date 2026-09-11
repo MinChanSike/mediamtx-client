@@ -19,13 +19,14 @@ import {
   Table24Regular,
 } from '@fluentui/react-icons';
 
-const PROTOCOL_OPTIONS = [
+export const PROTOCOL_OPTIONS = [
   { value: 'all', label: 'All Protocols' },
   { value: 'rtsp', label: 'RTSP' },
   { value: 'rtmp', label: 'RTMP' },
   { value: 'srt', label: 'SRT' },
   { value: 'udp', label: 'UDP' },
   { value: 'hls', label: 'HLS' },
+  { value: 'webrtc', label: 'WebRTC' },
   { value: 'file', label: 'File' },
   { value: 'ffmpeg', label: 'FFmpeg' },
   { value: 'unknown', label: 'Unknown' },
