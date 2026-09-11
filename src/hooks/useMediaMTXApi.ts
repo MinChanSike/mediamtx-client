@@ -68,6 +68,8 @@ const swrOptions = {
 
 const resourceGenerations = new Map<string, number>();
 
+const mutationGenerations = new Map<string, number>();
+
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
@@ -125,6 +127,17 @@ function beginResourceGeneration(key: MediaMTXSWRKey) {
 
 function canCommitGeneration(serverUrl: string, generationKey: string, generation: number) {
   return canCommit(serverUrl) && resourceGenerations.get(generationKey) === generation;
+}
+
+function beginMutationGeneration(key: ApiMutationKey) {
+  const generationKey = String(key);
+  const generation = (mutationGenerations.get(generationKey) ?? 0) + 1;
+  mutationGenerations.set(generationKey, generation);
+  return { generationKey, generation };
+}
+
+function isMutationGenerationCurrent(generationKey: string, generation: number) {
+  return mutationGenerations.get(generationKey) === generation;
 }
 
 function beginIfCurrent(serverUrl: string, begin: () => void) {
@@ -523,19 +536,24 @@ export function useStoreMutation<TVariables>(
   const resetMutation = useMediaMTXApiStore((state) => state.resetMutation);
 
   const mutateAsync = async (variables: TVariables, options?: MutationOptions) => {
+    const { generationKey, generation } = beginMutationGeneration(key);
     beginMutation(key);
 
     try {
       await mutationFn(variables);
+      if (!isMutationGenerationCurrent(generationKey, generation)) return;
       setMutationSuccess(key);
       options?.onSuccess?.();
     } catch (error) {
       const normalizedError = toError(error);
+      if (!isMutationGenerationCurrent(generationKey, generation)) throw normalizedError;
       setMutationError(key, normalizedError);
       options?.onError?.(normalizedError);
       throw normalizedError;
     } finally {
-      options?.onSettled?.();
+      if (isMutationGenerationCurrent(generationKey, generation)) {
+        options?.onSettled?.();
+      }
     }
   };
 
@@ -545,7 +563,10 @@ export function useStoreMutation<TVariables>(
       void mutateAsync(variables, options).catch(() => undefined);
     },
     mutateAsync,
-    reset: () => resetMutation(key),
+    reset: () => {
+      beginMutationGeneration(key);
+      resetMutation(key);
+    },
   };
 }
 
