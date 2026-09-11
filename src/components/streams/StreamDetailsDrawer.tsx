@@ -29,7 +29,6 @@ import ViewerDetailsDrawer from '@src/components/streams/ViewerDetailsDrawer';
 import PlaybackUrls from '@src/components/streams/PlaybackUrls';
 import {
   getAdditionalStreamDetails,
-  getPrimitiveDetails,
   getSourceIdentityDetails,
   getSourcePrimitiveDetails,
   type ViewerTableRow,
@@ -254,15 +253,8 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                       ) : (
                         <ul className={styles.list}>
                           {stream.tracks.map((track) => (
-                            <li key={track.id} className={styles.detailRow}>
-                              <Text>
-                                #{track.id} - {track.type}
-                              </Text>
-                              {getPrimitiveDetails(track, ['id', 'type']).map(({ key, value }) => (
-                                <Text key={key} size={200} className={styles.muted}>
-                                  {key}: {String(value)}
-                                </Text>
-                              ))}
+                            <li key={track} className={styles.detailRow}>
+                              <Text>{track}</Text>
                             </li>
                           ))}
                         </ul>

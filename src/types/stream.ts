@@ -19,11 +19,7 @@ export interface PathItem {
   [key: string]: unknown;
 }
 
-export interface Track {
-  id: number;
-  type: string;
-  [key: string]: unknown;
-}
+export type Track = string;
 
 export interface Reader {
   id: string;

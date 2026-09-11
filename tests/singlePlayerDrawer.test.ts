@@ -8,10 +8,7 @@ const stream: PathItem = {
   sourceInfo: { type: 'rtspSource' },
   sourceState: 'ready',
   sourceError: '',
-  tracks: [
-    { id: 0, type: 'H264' },
-    { id: 1, type: 'Opus' },
-  ],
+  tracks: ['H264', 'Opus'],
   bytesReceived: 100,
   bytesSent: 200,
   inboundBytes: 1024,

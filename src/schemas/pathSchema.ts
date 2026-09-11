@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-export const trackSchema = z.object({
-  id: z.number(),
-  type: z.string(),
-}).passthrough();
+export const trackSchema = z.string();
 
 export const readerSchema = z.object({
   id: z.string().default(''),
