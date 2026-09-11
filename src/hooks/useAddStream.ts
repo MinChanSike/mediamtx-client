@@ -80,7 +80,7 @@ export const addStreamSchema = z.object({
     .min(1, 'Stream name is required')
     .regex(/^[a-zA-Z0-9_\-/]+$/, 'Only letters, numbers, _, -, / are allowed'),
   protocol: addStreamProtocolSchema,
-  sourceUri: z.string().min(1, 'Source URI is required'),
+  sourceUri: z.string().trim().min(1, 'Source URI is required'),
 }).superRefine((value, context) => {
   if (!value.sourceUri || isValidAddStreamSourceUri(value.protocol, value.sourceUri)) return;
 
