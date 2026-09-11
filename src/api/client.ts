@@ -1,27 +1,31 @@
-import useAppStore from '@src/store/useAppStore';
+import useAppStore from "@src/store/useAppStore";
 
 export class ApiError extends Error {
   constructor(
     public status: number,
     public statusText: string,
-    message?: string
+    message?: string,
   ) {
     super(message ?? `HTTP ${status}: ${statusText}`);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
+}
+
+export function normalizeBaseUrl(serverUrl: string): string {
+  return serverUrl.replace(/\/+$/, "");
 }
 
 export async function apiFetch<T>(
   path: string,
   options?: RequestInit,
-  serverUrl = useAppStore.getState().serverUrl
+  serverUrl = useAppStore.getState().serverUrl,
 ): Promise<T> {
-  const baseUrl = serverUrl;
+  const baseUrl = normalizeBaseUrl(serverUrl);
   const url = `${baseUrl}${path}`;
 
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options?.headers,
     },
     ...options,

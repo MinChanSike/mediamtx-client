@@ -1,7 +1,12 @@
-import { apiFetch, ApiError } from '@src/api/client';
-import useAppStore from '@src/store/useAppStore';
-import type { PathList, PathItem, Track, Reader } from '@src/schemas/pathSchema';
-import type { KickTarget, ViewerDetailTarget } from '@src/utils/streamDisplay';
+import { apiFetch, ApiError, normalizeBaseUrl } from "@src/api/client";
+import useAppStore from "@src/store/useAppStore";
+import type {
+  PathList,
+  PathItem,
+  Track,
+  Reader,
+} from "@src/schemas/pathSchema";
+import type { KickTarget, ViewerDetailTarget } from "@src/utils/streamDisplay";
 
 interface RawPathItem {
   name: string;
@@ -40,17 +45,19 @@ interface RawConfigPathList {
   items: RawConfigPathItem[];
 }
 
-const FALLBACK_CONFIG_PATH_NAME = '**all_others';
+const FALLBACK_CONFIG_PATH_NAME = "**all_others";
 
 function mapRuntimePath(item: RawPathItem): PathItem {
   let sourceString: string | null = null;
-  const sourceInfo = item.source && typeof item.source === 'object' ? item.source : null;
+  const sourceInfo =
+    item.source && typeof item.source === "object" ? item.source : null;
 
-  if (typeof item.source === 'string') {
+  if (typeof item.source === "string") {
     sourceString = item.source;
-  } else if (item.source && typeof item.source === 'object') {
+  } else if (item.source && typeof item.source === "object") {
     const sourceUrl = item.source.url;
-    sourceString = typeof sourceUrl === 'string' && sourceUrl ? sourceUrl : null;
+    sourceString =
+      typeof sourceUrl === "string" && sourceUrl ? sourceUrl : null;
   }
 
   return {
@@ -62,14 +69,14 @@ function mapRuntimePath(item: RawPathItem): PathItem {
 
 export async function getPathsList(serverUrl?: string): Promise<PathList> {
   const [runtimePaths, configPaths] = await Promise.all([
-    apiFetch<RawPathList>('/v3/paths/list', undefined, serverUrl),
-    apiFetch<RawConfigPathList>('/v3/config/paths/list', undefined, serverUrl),
+    apiFetch<RawPathList>("/v3/paths/list", undefined, serverUrl),
+    apiFetch<RawConfigPathList>("/v3/config/paths/list", undefined, serverUrl),
   ]);
 
   const configPathsByName = new Map(
     (configPaths.items || [])
       .filter((item) => item.name !== FALLBACK_CONFIG_PATH_NAME)
-      .map((item) => [item.name, item])
+      .map((item) => [item.name, item]),
   );
 
   const mergedItems: PathItem[] = (runtimePaths.items || [])
@@ -81,7 +88,9 @@ export async function getPathsList(serverUrl?: string): Promise<PathList> {
       if (!configuredPath) return runtimePath;
 
       const configuredSource =
-        typeof configuredPath.source === 'string' ? configuredPath.source : runtimePath.source;
+        typeof configuredPath.source === "string"
+          ? configuredPath.source
+          : runtimePath.source;
 
       return {
         ...configuredPath,
@@ -99,29 +108,36 @@ export async function getPathsList(serverUrl?: string): Promise<PathList> {
   };
 }
 
-export async function getPathDetail(name: string, serverUrl?: string): Promise<unknown> {
-  return apiFetch<unknown>(`/v3/paths/get/${encodeURIComponent(name)}`, undefined, serverUrl);
+export async function getPathDetail(
+  name: string,
+  serverUrl?: string,
+): Promise<unknown> {
+  return apiFetch<unknown>(
+    `/v3/paths/get/${encodeURIComponent(name)}`,
+    undefined,
+    serverUrl,
+  );
 }
 
 export async function getViewerDetail(
   target: ViewerDetailTarget,
-  serverUrl?: string
+  serverUrl?: string,
 ): Promise<unknown> {
   return apiFetch<unknown>(
     `/v3/${target.endpoint}/get/${encodeURIComponent(target.id)}`,
     undefined,
-    serverUrl
+    serverUrl,
   );
 }
 
 export async function addPath(name: string, sourceUri: string): Promise<void> {
-  const baseUrl = useAppStore.getState().serverUrl;
+  const baseUrl = normalizeBaseUrl(useAppStore.getState().serverUrl);
   const url = `${baseUrl}/v3/config/paths/add/${encodeURIComponent(name)}`;
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ source: sourceUri }),
   });
@@ -131,11 +147,11 @@ export async function addPath(name: string, sourceUri: string): Promise<void> {
 }
 
 export async function deletePath(name: string): Promise<void> {
-  const baseUrl = useAppStore.getState().serverUrl;
+  const baseUrl = normalizeBaseUrl(useAppStore.getState().serverUrl);
   const url = `${baseUrl}/v3/config/paths/delete/${encodeURIComponent(name)}`;
 
   const response = await fetch(url, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 
   if (!response.ok) {
@@ -143,14 +159,17 @@ export async function deletePath(name: string): Promise<void> {
   }
 }
 
-export async function patchPath(name: string, sourceUri: string): Promise<void> {
-  const baseUrl = useAppStore.getState().serverUrl;
+export async function patchPath(
+  name: string,
+  sourceUri: string,
+): Promise<void> {
+  const baseUrl = normalizeBaseUrl(useAppStore.getState().serverUrl);
   const url = `${baseUrl}/v3/config/paths/patch/${encodeURIComponent(name)}`;
 
   const response = await fetch(url, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ source: sourceUri }),
   });
@@ -161,11 +180,11 @@ export async function patchPath(name: string, sourceUri: string): Promise<void> 
 }
 
 export async function kickPathTarget(target: KickTarget): Promise<void> {
-  const baseUrl = useAppStore.getState().serverUrl;
+  const baseUrl = normalizeBaseUrl(useAppStore.getState().serverUrl);
   const url = `${baseUrl}/v3/${target.endpoint}/kick/${encodeURIComponent(target.id)}`;
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
   });
 
   if (!response.ok) {

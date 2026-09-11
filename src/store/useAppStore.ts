@@ -1,9 +1,13 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
+import { create } from "zustand";
+import {
+  createJSONStorage,
+  persist,
+  type StateStorage,
+} from "zustand/middleware";
+import useMediaMTXApiStore from "@src/store/useMediaMTXApiStore";
 
-type ActiveTab = 'dashboard' | 'streams';
-type Theme = 'light' | 'dark';
+type ActiveTab = "dashboard" | "streams";
+type Theme = "light" | "dark";
 
 export interface AppState {
   activeTab: ActiveTab;
@@ -21,7 +25,7 @@ interface AppPreferences {
   serverUrl: string;
 }
 
-export const APP_PREFERENCES_STORAGE_KEY = 'mediamtx-app-preferences';
+export const APP_PREFERENCES_STORAGE_KEY = "mediamtx-app-preferences";
 
 const safeLocalStorage: StateStorage = {
   getItem: (name) => {
@@ -48,18 +52,23 @@ const safeLocalStorage: StateStorage = {
 };
 
 function isTheme(value: unknown): value is Theme {
-  return value === 'light' || value === 'dark';
+  return value === "light" || value === "dark";
 }
 
-function mergeAppPreferences(persistedState: unknown, currentState: AppState): AppState {
-  if (!persistedState || typeof persistedState !== 'object') return currentState;
+function mergeAppPreferences(
+  persistedState: unknown,
+  currentState: AppState,
+): AppState {
+  if (!persistedState || typeof persistedState !== "object")
+    return currentState;
 
   const persisted = persistedState as Partial<AppPreferences>;
   return {
     ...currentState,
     theme: isTheme(persisted.theme) ? persisted.theme : currentState.theme,
     serverUrl:
-      typeof persisted.serverUrl === 'string' && persisted.serverUrl.trim().length > 0
+      typeof persisted.serverUrl === "string" &&
+      persisted.serverUrl.trim().length > 0
         ? persisted.serverUrl
         : currentState.serverUrl,
   };
@@ -69,17 +78,19 @@ export function createAppStore(storage: StateStorage = safeLocalStorage) {
   return create<AppState>()(
     persist(
       (set) => ({
-        activeTab: 'dashboard',
-        theme: 'dark',
-        serverUrl: 'http://localhost:9997',
+        activeTab: "dashboard",
+        theme: "dark",
+        serverUrl: "http://localhost:9997",
         isSidebarCollapsed: false,
         setActiveTab: (tab) => set({ activeTab: tab }),
         setTheme: (theme) => set({ theme }),
         setServerUrl: (url) => {
-          useMediaMTXApiStore.getState().resetForServerUrl(url);
-          set({ serverUrl: url });
+          const normalized = url.replace(/\/+$/, "");
+          useMediaMTXApiStore.getState().resetForServerUrl(normalized);
+          set({ serverUrl: normalized });
         },
-        toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+        toggleSidebar: () =>
+          set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
       }),
       {
         name: APP_PREFERENCES_STORAGE_KEY,
@@ -89,8 +100,8 @@ export function createAppStore(storage: StateStorage = safeLocalStorage) {
           serverUrl: state.serverUrl,
         }),
         merge: mergeAppPreferences,
-      }
-    )
+      },
+    ),
   );
 }
 
