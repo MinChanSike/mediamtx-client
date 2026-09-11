@@ -40,6 +40,7 @@ export function useStreamPlayer(streamName: string | null) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const connectionTimeoutRef = useRef<number | null>(null);
+  const nativeHlsCleanupRef = useRef<(() => void) | null>(null);
   const webrtcPort = useMemo(
     () => extractPlaybackPort(config?.webrtcAddress, '8889'),
     [config?.webrtcAddress]
@@ -63,6 +64,10 @@ export function useStreamPlayer(streamName: string | null) {
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
+    }
+    if (nativeHlsCleanupRef.current) {
+      nativeHlsCleanupRef.current();
+      nativeHlsCleanupRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -103,10 +108,15 @@ export function useStreamPlayer(streamName: string | null) {
           });
       };
       video.addEventListener('loadedmetadata', onMetadataLoaded);
-      video.addEventListener('error', () => {
+      const onError = () => {
         setStatus('error');
         setErrorMessage('Native HLS play error');
-      });
+      };
+      video.addEventListener('error', onError);
+      nativeHlsCleanupRef.current = () => {
+        video.removeEventListener('loadedmetadata', onMetadataLoaded);
+        video.removeEventListener('error', onError);
+      };
     } else if (Hls.isSupported()) {
       const hls = new Hls({
         maxBufferLength: 10,
