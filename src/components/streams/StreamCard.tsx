@@ -33,6 +33,7 @@ interface StreamCardProps {
   onAddToGrid: (stream: PathItem) => void;
   onEdit: (stream: PathItem) => void;
   onDelete: (stream: PathItem) => void;
+  isDeletePending?: boolean;
   onViewers: (stream: PathItem) => void;
 }
 
@@ -106,6 +107,7 @@ export default function StreamCard({
   onAddToGrid,
   onEdit,
   onDelete,
+  isDeletePending,
   onViewers,
 }: StreamCardProps) {
   const styles = useStyles();
@@ -188,7 +190,12 @@ export default function StreamCard({
               positioning="below-end"
             >
               <PopoverTrigger disableButtonEnhancement>
-                <Button icon={<DeleteRegular style={smallIconStyle} />}>Delete</Button>
+                <Button
+                  icon={<DeleteRegular style={smallIconStyle} />}
+                  disabled={isDeletePending}
+                >
+                  Delete
+                </Button>
               </PopoverTrigger>
               <PopoverSurface>
                 <div className={styles.confirmation}>
@@ -201,8 +208,13 @@ export default function StreamCard({
                     >
                       Cancel
                     </Button>
-                    <Button appearance="primary" size="small" onClick={handleDeleteStream}>
-                      Confirm
+                    <Button
+                      appearance="primary"
+                      size="small"
+                      disabled={isDeletePending}
+                      onClick={handleDeleteStream}
+                    >
+                      {isDeletePending ? 'Deleting...' : 'Confirm'}
                     </Button>
                   </div>
                 </div>

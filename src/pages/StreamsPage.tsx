@@ -261,6 +261,7 @@ export default function StreamsPage() {
                       onAddToGrid={handleAddToGrid}
                       onEdit={handleEdit}
                       onDelete={handleCardDelete}
+                      isDeletePending={deleteMutation.isPending}
                       onViewers={handleViewers}
                     />
                   ))

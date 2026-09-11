@@ -146,6 +146,60 @@ describe('Stream card reader actions source contract', () => {
     expect(page).toContain('onDelete={handleCardDelete}');
   });
 
+  test('disables Stream Card delete controls while a delete is in flight', () => {
+    const card = source('src/components/streams/StreamCard.tsx');
+    const page = source('src/pages/StreamsPage.tsx');
+    const deleteTriggerStart = card.indexOf('icon={<DeleteRegular style={smallIconStyle} />}');
+    const deleteSurfaceStart = card.indexOf('<PopoverSurface>', deleteTriggerStart);
+    const deleteSurfaceEnd = card.indexOf('</PopoverSurface>', deleteSurfaceStart);
+
+    expect(deleteTriggerStart).toBeGreaterThan(-1);
+    expect(deleteSurfaceStart).toBeGreaterThan(deleteTriggerStart);
+    expect(deleteSurfaceEnd).toBeGreaterThan(deleteSurfaceStart);
+
+    // The parent threads the shared deleteMutation pending flag into the card.
+    expect(card).toContain('isDeletePending?: boolean;');
+    expect(page).toContain('isDeletePending={deleteMutation.isPending}');
+
+    // The Delete trigger is disabled while a delete is pending.
+    expect(card.slice(deleteTriggerStart, deleteSurfaceStart)).toContain(
+      'disabled={isDeletePending}'
+    );
+
+    // The Confirm button disables and relabels while pending, mirroring the
+    // page-level delete Dialog guard for the same deleteMutation.
+    expect(card.slice(deleteSurfaceStart, deleteSurfaceEnd)).toContain(
+      'disabled={isDeletePending}'
+    );
+    expect(card.slice(deleteSurfaceStart, deleteSurfaceEnd)).toContain(
+      "{isDeletePending ? 'Deleting...' : 'Confirm'}"
+    );
+
+    // The page-level delete Dialog guard for the same mutation is unchanged.
+    expect(page).toContain('disabled={deleteMutation.isPending}');
+    expect(page).toContain("deleteMutation.isPending ? 'Deleting...' : 'Delete'");
+  });
+
+  test('keeps the card delete pending-guard on parity with the sibling Kick Source guard', () => {
+    const card = source('src/components/streams/StreamCard.tsx');
+    const kickTriggerStart = card.indexOf('aria-label={`Kick source for ${stream.name}`}');
+    const kickSurfaceStart = card.indexOf('<PopoverSurface>', kickTriggerStart);
+    const kickSurfaceEnd = card.indexOf('</PopoverSurface>', kickSurfaceStart);
+
+    expect(kickTriggerStart).toBeGreaterThan(-1);
+    expect(kickSurfaceStart).toBeGreaterThan(kickTriggerStart);
+    expect(kickSurfaceEnd).toBeGreaterThan(kickSurfaceStart);
+
+    // The sibling Kick Source trigger and Confirm remain guarded (no regression),
+    // matching the new delete pending-guard pattern.
+    expect(card.slice(kickTriggerStart, kickSurfaceStart)).toContain(
+      'disabled={kickMutation.isPending}'
+    );
+    expect(card.slice(kickSurfaceStart, kickSurfaceEnd)).toContain(
+      'disabled={kickMutation.isPending}'
+    );
+  });
+
   test('keeps Stream Card and Stream Table edit and delete controls gated by isConfigured', () => {
     const card = source('src/components/streams/StreamCard.tsx');
     const table = source('src/components/streams/StreamTable.tsx');
