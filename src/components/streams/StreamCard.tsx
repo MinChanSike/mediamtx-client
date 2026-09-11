@@ -34,6 +34,7 @@ interface StreamCardProps {
   onEdit: (stream: PathItem) => void;
   onDelete: (stream: PathItem) => void;
   onViewers: (stream: PathItem) => void;
+  isGridFull?: boolean;
 }
 
 type ActiveConfirmation = 'delete' | 'kickSource' | null;
@@ -107,6 +108,7 @@ export default function StreamCard({
   onEdit,
   onDelete,
   onViewers,
+  isGridFull = false,
 }: StreamCardProps) {
   const styles = useStyles();
   const kickMutation = useKickStreamTarget();
@@ -164,6 +166,7 @@ export default function StreamCard({
           </Button>
           <Button
             icon={<AddSquareRegular style={smallIconStyle} />}
+            disabled={isGridFull}
             onClick={() => onAddToGrid(stream)}
           >
             Grid

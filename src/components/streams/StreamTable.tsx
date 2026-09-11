@@ -37,6 +37,7 @@ interface StreamTableProps {
   onAddToGrid: (stream: PathItem) => void;
   onEdit: (stream: PathItem) => void;
   onDelete: (stream: PathItem) => void;
+  isGridFull?: boolean;
 }
 
 type SortColumn = 'name' | 'protocol' | 'tracks' | 'readers' | 'bytesIn' | 'bytesOut' | 'status';
@@ -147,6 +148,7 @@ export default function StreamTable({
   onAddToGrid,
   onEdit,
   onDelete,
+  isGridFull = false,
 }: StreamTableProps) {
   const styles = useStyles();
   const tableWrapRef = useRef<ElementRef<'div'>>(null);
@@ -295,6 +297,7 @@ export default function StreamTable({
                         icon={<AddSquareRegular style={smallIconStyle} />}
                         aria-label={`Add ${stream.name} to grid`}
                         title="Add to Grid"
+                        disabled={isGridFull}
                         onClick={() => onAddToGrid(stream)}
                       />
                       <Button

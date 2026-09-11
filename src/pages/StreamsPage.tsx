@@ -25,6 +25,7 @@ import AddStreamDrawer from '@src/components/streams/AddStreamDrawer';
 import SinglePlayerDrawer from '@src/components/streams/SinglePlayerDrawer';
 import MultiPlayerGrid from '@src/components/streams/MultiPlayerGrid';
 import EditStreamDrawer from '@src/components/streams/EditStreamDrawer';
+import { findEmptyGridSlot, gridSlotCount } from '@src/components/streams/gridSlots';
 import { useMediaMTXPaths } from '@src/hooks/useMediaMTXPaths';
 import { getDisplayProtocol } from '@src/utils/streamDisplay';
 import type { PathItem } from '@src/types/stream';
@@ -108,6 +109,9 @@ export default function StreamsPage() {
   const setDrawerStream = usePlayerStore((s) => s.setDrawerStream);
   const setIsDrawerOpen = usePlayerStore((s) => s.setIsDrawerOpen);
 
+  const slotCount = gridSlotCount(gridLayout);
+  const isGridFull = findEmptyGridSlot(slotCount, activeGridStreams) === -1;
+
   const streams = data?.items ?? [];
   const latestDetailsStream = resolveLatestDetailsStream(detailsStream, streams);
   const latestViewerDrawerStream = resolveLatestDetailsStream(viewerDrawerStream, streams);
@@ -149,16 +153,8 @@ export default function StreamsPage() {
   }
 
   function handleAddToGrid(stream: PathItem) {
-    const slotCount =
-      gridLayout === '1x1' ? 1 : gridLayout === '2x2' ? 4 : gridLayout === '3x3' ? 9 : 16;
-
-    let targetSlot = 0;
-    for (let index = 0; index < slotCount; index++) {
-      if (!activeGridStreams.has(index)) {
-        targetSlot = index;
-        break;
-      }
-    }
+    const targetSlot = findEmptyGridSlot(slotCount, activeGridStreams);
+    if (targetSlot === -1) return;
     setGridStream(targetSlot, stream.name);
     setLayout('grid');
   }
@@ -244,6 +240,7 @@ export default function StreamsPage() {
                 onAddToGrid={handleAddToGrid}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                isGridFull={isGridFull}
               />
             ) : layout === 'cards' ? (
               <div className={styles.cardsGrid}>
@@ -262,6 +259,7 @@ export default function StreamsPage() {
                       onEdit={handleEdit}
                       onDelete={handleCardDelete}
                       onViewers={handleViewers}
+                      isGridFull={isGridFull}
                     />
                   ))
                 )}
