@@ -26,6 +26,7 @@ import { useMediaMTXConfig } from '@src/hooks/useMediaMTXConfig';
 import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
+import { isAbsoluteHttpUrl } from '@src/utils/serverUrl';
 
 type NavTab = 'dashboard' | 'streams';
 
@@ -213,6 +214,7 @@ export default function AppSidebar() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState(serverUrl);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   useEffect(() => {
     setUrlInput(serverUrl);
@@ -232,15 +234,29 @@ export default function AppSidebar() {
   };
 
   const handleSave = () => {
-    if (urlInput.trim()) {
-      setServerUrl(urlInput.trim());
-      setIsEditing(false);
+    const trimmed = urlInput.trim();
+    if (!trimmed) {
+      setUrlError('Enter a MediaMTX API endpoint URL.');
+      return;
     }
+    if (!isAbsoluteHttpUrl(trimmed)) {
+      setUrlError('Enter a full http:// or https:// URL, for example http://localhost:9997.');
+      return;
+    }
+    setServerUrl(trimmed);
+    setUrlError(null);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setUrlInput(serverUrl);
+    setUrlError(null);
     setIsEditing(false);
+  };
+
+  const handleToggleEdit = () => {
+    setUrlError(null);
+    setIsEditing((current) => !current);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -328,12 +344,20 @@ export default function AppSidebar() {
 
       {!isSidebarCollapsed && isEditing && (
         <div className={styles.editPanel}>
-          <Field label="MediaMTX API endpoint" size="small">
+          <Field
+            label="MediaMTX API endpoint"
+            size="small"
+            validationState={urlError ? 'error' : 'none'}
+            validationMessage={urlError ?? undefined}
+          >
             <Input
               id="server-url-input"
               type="text"
               value={urlInput}
-              onChange={(_event, data) => setUrlInput(data.value)}
+              onChange={(_event, data) => {
+                setUrlInput(data.value);
+                setUrlError(null);
+              }}
               onKeyDown={handleKeyDown}
               placeholder="http://localhost:9997"
               size="small"
@@ -365,7 +389,7 @@ export default function AppSidebar() {
               aria-label="Edit MediaMTX API endpoint"
               appearance={isEditing ? 'secondary' : 'subtle'}
               icon={<Settings24Regular />}
-              onClick={() => setIsEditing((current) => !current)}
+              onClick={handleToggleEdit}
               size="small"
             />
           </Tooltip>

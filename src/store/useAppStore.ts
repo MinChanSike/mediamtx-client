@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
+import { isAbsoluteHttpUrl } from '@src/utils/serverUrl';
 
 type ActiveTab = 'dashboard' | 'streams';
 type Theme = 'light' | 'dark';
@@ -59,8 +60,8 @@ function mergeAppPreferences(persistedState: unknown, currentState: AppState): A
     ...currentState,
     theme: isTheme(persisted.theme) ? persisted.theme : currentState.theme,
     serverUrl:
-      typeof persisted.serverUrl === 'string' && persisted.serverUrl.trim().length > 0
-        ? persisted.serverUrl
+      typeof persisted.serverUrl === 'string' && isAbsoluteHttpUrl(persisted.serverUrl.trim())
+        ? persisted.serverUrl.trim()
         : currentState.serverUrl,
   };
 }
@@ -76,8 +77,10 @@ export function createAppStore(storage: StateStorage = safeLocalStorage) {
         setActiveTab: (tab) => set({ activeTab: tab }),
         setTheme: (theme) => set({ theme }),
         setServerUrl: (url) => {
-          useMediaMTXApiStore.getState().resetForServerUrl(url);
-          set({ serverUrl: url });
+          const trimmed = url.trim();
+          if (!isAbsoluteHttpUrl(trimmed)) return;
+          useMediaMTXApiStore.getState().resetForServerUrl(trimmed);
+          set({ serverUrl: trimmed });
         },
         toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
       }),
