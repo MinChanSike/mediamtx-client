@@ -18,6 +18,7 @@ import VideoPlayer from '@src/components/streams/VideoPlayer';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
 import { isStreamOnline } from '@src/utils/streamStatus';
 import { buildStreamTree, type StreamTreeNode } from '@src/components/streams/streamTree';
+import mediaMtxLogo from '@src/assets/logo-mediaMTX.svg';
 import {
   assignDroppedStream,
   createStreamAssignmentDragData,
@@ -246,14 +247,32 @@ const useStyles = makeStyles({
     textAlign: 'center',
   },
   emptyCopy: {
-    color: tokens.colorNeutralForeground3,
     opacity: 0.2,
     transitionDuration: tokens.durationFast,
-    transitionProperty: 'opacity',
+    transitionProperty: 'filter, opacity',
     transitionTimingFunction: tokens.curveEasyEase,
+    filter: 'grayscale(1)',
+    ':global(.stream-grid-cell:hover)': {
+      filter: 'grayscale(0)',
+      opacity: 0.72,
+    },
   },
-  emptyTitle: {
-    color: tokens.colorNeutralForeground3,
+  emptyLogo: {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
+  },
+  emptyLogo1x1: {
+    maxWidth: '320px',
+  },
+  emptyLogo2x2: {
+    maxWidth: '200px',
+  },
+  emptyLogo3x3: {
+    maxWidth: '132px',
+  },
+  emptyLogo4x4: {
+    maxWidth: '92px',
   },
 });
 
@@ -319,6 +338,7 @@ function DraggableStream({ node, inset }: DraggableStreamProps) {
 
 interface GridDropCellProps {
   index: number;
+  gridLayout: keyof typeof GRID_DETAILS;
   streamName: string | null;
   setGridStream: (slot: number, streamName: string) => void;
   clearGridStream: (slot: number) => void;
@@ -347,7 +367,13 @@ export function registerGridDropTarget(
   });
 }
 
-function GridDropCell({ index, streamName, setGridStream, clearGridStream }: GridDropCellProps) {
+function GridDropCell({
+  index,
+  gridLayout,
+  streamName,
+  setGridStream,
+  clearGridStream,
+}: GridDropCellProps) {
   const styles = useStyles();
   const closeButtonStyles = useCloseButtonStyles();
   const elementRef = useRef<ElementRef<'div'>>(null);
@@ -400,9 +426,17 @@ function GridDropCell({ index, streamName, setGridStream, clearGridStream }: Gri
       ) : (
         <div className={styles.emptyCell}>
           <div className={mergeClasses('stream-grid-empty-copy', styles.emptyCopy)}>
-            <Text size={200} weight="semibold" className={styles.emptyTitle}>
-              MediaMTX
-            </Text>
+            <img
+              src={mediaMtxLogo}
+              alt="MediaMTX"
+              className={mergeClasses(
+                styles.emptyLogo,
+                gridLayout === '1x1' && styles.emptyLogo1x1,
+                gridLayout === '2x2' && styles.emptyLogo2x2,
+                gridLayout === '3x3' && styles.emptyLogo3x3,
+                gridLayout === '4x4' && styles.emptyLogo4x4
+              )}
+            />
           </div>
         </div>
       )}
@@ -507,6 +541,7 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
               <GridDropCell
                 key={index}
                 index={index}
+                gridLayout={gridLayout}
                 streamName={streamName}
                 setGridStream={setGridStream}
                 clearGridStream={clearGridStream}
