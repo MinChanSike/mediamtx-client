@@ -40,7 +40,7 @@ describe('Stream table actions source contract', () => {
     expect(triggerEnd).toBeGreaterThan(triggerStart);
     expect(table.slice(triggerStart, triggerEnd)).not.toContain('kickMutation.mutate');
     expect(table.slice(triggerStart, triggerEnd)).toContain('onClick={() => onKickSource(stream)}');
-    expect(page).toContain("import { useKickStreamTarget } from '@src/hooks/useKickStreamTarget';");
+    expect(page).toContain('import { useKickStreamTarget } from "@src/hooks/useKickStreamTarget";');
     expect(page).toContain('const kickMutation = useKickStreamTarget();');
     expect(page).toContain('function handleKickSource(stream: PathItem)');
     expect(page).toContain('setKickSourceStream(stream);');

@@ -5,6 +5,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import AppSidebar from '@src/components/layout/AppSidebar';
 import useAppStore from '@src/store/useAppStore';
 import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
+import usePlaybackStore from '@src/store/usePlaybackStore';
 
 const originalFetch = globalThis.fetch;
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
@@ -39,6 +40,9 @@ function installGlobalConfigMock() {
         udpMaxPayloadSize: 1472,
         apiAddress: '127.0.0.1:9997',
         metricsAddress: '127.0.0.1:9998',
+        playback: true,
+        playbackAddress: ':9996',
+        playbackEncryption: false,
         hlsAddress: ':8888',
         rtspAddress: ':8554',
         rtmpAddress: ':1935',
@@ -114,6 +118,7 @@ beforeEach(() => {
     theme: 'dark',
   });
   useMediaMTXApiStore.getState().resetForServerUrl('http://sidebar.mediamtx.test');
+  usePlaybackStore.setState({ endpointOverrides: {} });
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
     value: {
@@ -136,6 +141,7 @@ afterEach(async () => {
   globalThis.fetch = originalFetch;
   restoreWindow();
   useMediaMTXApiStore.getState().resetForServerUrl('');
+  usePlaybackStore.setState({ endpointOverrides: {} });
   useAppStore.setState({
     activeTab: 'dashboard',
     isSidebarCollapsed: false,
@@ -206,5 +212,55 @@ describe('collapsed AppSidebar behavior', () => {
     await renderSidebar('/streams');
 
     expect(useAppStore.getState().activeTab).toBe('streams');
+  });
+
+  test('edits the server API and playback server endpoints together', async () => {
+    await renderSidebar();
+
+    await act(async () => {
+      getButtonByAriaLabel(renderer!.root, 'Expand sidebar').props.onClick();
+      await flushMicrotasks();
+    });
+
+    await act(async () => {
+      getButtonByAriaLabel(renderer!.root, 'Edit server endpoints').props.onClick();
+      await flushMicrotasks();
+    });
+
+    const fields = renderer!.root.findAll((node) => node.type === 'label');
+    expect(fields.some((node) => node.children.includes('Server API endpoint'))).toBe(true);
+    expect(fields.some((node) => node.children.includes('Playback server endpoint'))).toBe(true);
+
+    const apiInput = renderer!.root.find(
+      (node) => node.type === 'input' && node.props.id === 'server-url-input'
+    );
+    const playbackInput = renderer!.root.find(
+      (node) => node.type === 'input' && node.props.id === 'playback-server-url-input'
+    );
+
+    await act(async () => {
+      apiInput.props.onChange(
+        { target: { value: 'http://new-api.test:9997' } },
+        { value: 'http://new-api.test:9997' }
+      );
+      playbackInput.props.onChange(
+        { target: { value: 'http://new-playback.test:9996' } },
+        { value: 'http://new-playback.test:9996' }
+      );
+      await flushMicrotasks();
+    });
+
+    const saveButton = renderer!.root.find(
+      (node) => node.type === 'button' && node.props.id === 'server-url-save'
+    );
+    await act(async () => {
+      saveButton.props.onClick();
+      await flushMicrotasks();
+    });
+
+    expect(useAppStore.getState().serverUrl).toBe('http://new-api.test:9997');
+    expect(usePlaybackStore.getState().endpointOverrides['http://new-api.test:9997']).toBe(
+      'http://new-playback.test:9996'
+    );
   });
 });

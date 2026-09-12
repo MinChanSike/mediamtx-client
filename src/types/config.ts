@@ -14,6 +14,7 @@ export interface GlobalConfig {
   pprofAddress?: string;
   playback?: boolean;
   playbackAddress?: string;
+  playbackEncryption?: boolean;
   rtsp?: boolean;
   hlsAddress: string;
   rtspAddress: string;

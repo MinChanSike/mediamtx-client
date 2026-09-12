@@ -25,6 +25,7 @@ export const globalConfigSchema = z.object({
   pprofAddress: z.string().optional(),
   playback: z.boolean().optional(),
   playbackAddress: z.string().optional(),
+  playbackEncryption: z.boolean().optional(),
   rtsp: z.boolean().optional(),
   hlsAddress: z.string().default(':8888'),
   rtspAddress: z.string().default(':8554'),

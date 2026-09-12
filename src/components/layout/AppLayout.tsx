@@ -2,8 +2,9 @@ import { makeStyles, tokens } from "@fluentui/react-components";
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppSidebar from "@src/components/layout/AppSidebar";
 import DashboardPage from "@src/pages/DashboardPage";
-import { DASHBOARD_ROUTE, STREAMS_ROUTE } from "@src/router/routes";
+import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, STREAMS_ROUTE } from "@src/router/routes";
 import StreamsPage from "@src/pages/StreamsPage";
+import PlaybackPage from "@src/pages/PlaybackPage";
 
 const useStyles = makeStyles({
   root: {
@@ -39,6 +40,7 @@ function PageContent() {
     <Routes>
       <Route path={DASHBOARD_ROUTE} element={<DashboardPage />} />
       <Route path={STREAMS_ROUTE} element={<StreamsPage />} />
+      <Route path={PLAYBACK_ROUTE} element={<PlaybackPage />} />
       <Route path="*" element={<Navigate to={DASHBOARD_ROUTE} replace />} />
     </Routes>
   );

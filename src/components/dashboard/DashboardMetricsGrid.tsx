@@ -103,7 +103,7 @@ export default function DashboardMetricsGrid() {
       </div>
       <section
         className={styles.protocolsSection}
-        aria-label="Readers by protocol"
+        aria-label="Streams by protocol"
       >
         <Text
           as="h2"
@@ -111,7 +111,7 @@ export default function DashboardMetricsGrid() {
           weight="semibold"
           className={styles.protocolsTitle}
         >
-          Readers by protocol
+          Streams by protocol
         </Text>
         <div className={styles.protocolGrid}>
           {protocols.map((metric) => (

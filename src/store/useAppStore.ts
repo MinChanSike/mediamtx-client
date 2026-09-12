@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
 
-type ActiveTab = 'dashboard' | 'streams';
+type ActiveTab = 'dashboard' | 'streams' | 'playback';
 type Theme = 'light' | 'dark';
 
 export interface AppState {

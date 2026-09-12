@@ -308,7 +308,11 @@ describe('Server dashboard metrics model', () => {
     const cardsByLabel = Object.fromEntries(
       metrics.cards.map((card) => [
         card.label,
-        { value: card.value, description: card.description },
+        {
+          value: card.value,
+          ...(card.secondaryValue !== undefined && { secondaryValue: card.secondaryValue }),
+          ...(card.description !== undefined && { description: card.description }),
+        },
       ])
     );
     expect(cardsByLabel).toMatchObject({
@@ -316,19 +320,22 @@ describe('Server dashboard metrics model', () => {
       'Active Streams': { value: 1 },
       Ingress: { value: '3.0 KiB/s' },
       Egress: { value: '12.0 KiB/s' },
-      'RTSP Readers': { value: 1 },
-      'RTSPS Readers': { value: 1 },
-      'RTMP Readers': { value: 1 },
-      'RTMPS READERS': { value: 1, description: 'Active RTMPS readers' },
-      'WebRTC Readers': { value: 1 },
-      'SRT READERS': { value: 1, description: 'Active SRT readers' },
-      'HLS Readers': { value: 1 },
+      RTSP: { value: 0, secondaryValue: 1 },
+      RTSPS: { value: 0, secondaryValue: 1 },
+      RTMP: { value: 0, secondaryValue: 1 },
+      RTMPS: { value: 0, secondaryValue: 1 },
+      WebRTC: { value: 0, secondaryValue: 1 },
+      SRT: { value: 0, secondaryValue: 1 },
+      HLS: { value: 0, secondaryValue: 1 },
       'Total Readers': { value: 7 },
     });
 
     const cardLabels = metrics.cards.map((card) => card.label);
-    expect(cardLabels).toContain('RTMPS READERS');
-    expect(cardLabels).toContain('SRT READERS');
+    expect(cardLabels).not.toContain('RTMPS READERS');
+    expect(cardLabels).not.toContain('SRT READERS');
+    expect(cardLabels).not.toContain('RTSP Readers');
+    expect(cardLabels).not.toContain('WebRTC Readers');
+    expect(cardLabels).not.toContain('HLS Readers');
     expect(cardLabels).not.toContain(obsoleteAudienceTerm('RTMPS Audiences').toUpperCase());
     expect(cardLabels).not.toContain(obsoleteAudienceTerm('SRT Audiences').toUpperCase());
     expect(cardLabels).not.toContain(obsoleteAudienceTerm('Total Audiences'));
@@ -388,6 +395,119 @@ describe('Server dashboard metrics model', () => {
     });
   });
 
+  test('counts active input streams per protocol from url sources and source types', () => {
+    const metrics = calculateDashboardMetrics({
+      globalConfig: baseConfig,
+      paths: {
+        itemCount: 8,
+        pageCount: 1,
+        items: [
+          {
+            name: 'pull-rtsp',
+            online: true,
+            source: 'rtsp://camera.example/media',
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'pull-rtsps',
+            online: true,
+            source: 'rtsps://camera.example/media',
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'push-rtmp',
+            online: true,
+            source: 'publisher',
+            sourceInfo: { type: 'rtmpConn', id: 'rtmp-1' },
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'push-webrtc',
+            online: true,
+            source: 'publisher',
+            sourceInfo: { type: 'webRTCSession', id: 'webrtc-1' },
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'pull-hls',
+            online: true,
+            source: 'https://cdn.example/live/stream.m3u8',
+            sourceInfo: { type: 'hlsSource', id: 'hls-1' },
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'push-srt',
+            online: true,
+            source: 'publisher',
+            sourceInfo: { type: 'srtConn', id: 'srt-1' },
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'offline-rtsp',
+            online: false,
+            source: 'rtsp://down.example/media',
+            sourceError: 'connection refused',
+            tracks: [],
+            readers: [],
+          },
+          {
+            name: 'udp-source',
+            online: true,
+            source: 'udp://:5004',
+            sourceError: '',
+            tracks: [],
+            readers: [],
+          },
+        ],
+      },
+    });
+
+    expect(metrics).toMatchObject({
+      rtspInputs: 1,
+      rtspsInputs: 1,
+      rtmpInputs: 1,
+      rtmpsInputs: 0,
+      webRTCInputs: 1,
+      srtInputs: 1,
+      hlsInputs: 1,
+    });
+
+    const cardsByLabel = Object.fromEntries(
+      metrics.cards.map((card) => [card.label, card.value])
+    );
+    expect(cardsByLabel).toMatchObject({
+      RTSP: 1,
+      RTSPS: 1,
+      RTMP: 1,
+      RTMPS: 0,
+      WebRTC: 1,
+      SRT: 1,
+      HLS: 1,
+    });
+  });
+
+  test('labels the protocol breakdown as streams and renders both counts in the existing cards', async () => {
+    const metricsGrid = await Bun.file('src/components/dashboard/DashboardMetricsGrid.tsx').text();
+    const metricCard = await Bun.file('src/components/common/MetricCard.tsx').text();
+
+    expect(metricsGrid).toContain('Streams by protocol');
+    expect(metricsGrid).not.toContain('Readers by protocol');
+    expect(metricCard).toContain('secondaryValue');
+    expect(metricCard).toContain('secondaryUnit');
+  });
+
   test('uses zero defaults for disabled protocols and invalid uptime', () => {
     const metrics = calculateDashboardMetrics({
       globalConfig: {
@@ -410,7 +530,8 @@ describe('Server dashboard metrics model', () => {
         items: [
           {
             name: 'alpha',
-            source: 'publisher',
+            online: true,
+            source: 'rtsp://example/cam',
             sourceError: '',
             tracks: [],
             bytesReceived: 0,
@@ -429,6 +550,8 @@ describe('Server dashboard metrics model', () => {
     expect(metrics.rtspViewers).toBe(0);
     expect(metrics.rtspsViewers).toBe(0);
     expect(metrics.rtmpsConnections).toBe(0);
+    expect(metrics.rtspInputs).toBe(0);
+    expect(metrics.rtspsInputs).toBe(0);
     expect(metrics.totalViewers).toBe(0);
   });
 

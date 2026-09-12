@@ -9,8 +9,13 @@ import { isStreamOnline } from '@src/utils/streamStatus';
 export interface DashboardMetricCard {
   label: string;
   value: string | number;
-  description: string;
+  unit?: string;
+  secondaryValue?: string | number;
+  secondaryUnit?: string;
+  description?: string;
 }
+
+export type InputProtocol = 'rtsp' | 'rtsps' | 'rtmp' | 'rtmps' | 'webrtc' | 'srt' | 'hls';
 
 export interface DashboardMetrics {
   uptime: number;
@@ -27,6 +32,13 @@ export interface DashboardMetrics {
   srtConnections: number;
   hlsViewers: number;
   totalViewers: number;
+  rtspInputs: number;
+  rtspsInputs: number;
+  rtmpInputs: number;
+  rtmpsInputs: number;
+  webRTCInputs: number;
+  srtInputs: number;
+  hlsInputs: number;
   cards: DashboardMetricCard[];
 }
 
@@ -94,6 +106,14 @@ export function calculateDashboardMetrics({
     webRTCViewers +
     srtConnections +
     hlsViewers;
+  const inputCounts = countInputStreamsByProtocol(pathItems);
+  const rtspInputs = isProtocolDisabled(globalConfig, 'rtsp') ? 0 : inputCounts.rtsp;
+  const rtspsInputs = isProtocolDisabled(globalConfig, 'rtsp') ? 0 : inputCounts.rtsps;
+  const rtmpInputs = isProtocolDisabled(globalConfig, 'rtmp') ? 0 : inputCounts.rtmp;
+  const rtmpsInputs = isProtocolDisabled(globalConfig, 'rtmp') ? 0 : inputCounts.rtmps;
+  const webRTCInputs = isProtocolDisabled(globalConfig, 'webrtc') ? 0 : inputCounts.webrtc;
+  const srtInputs = isProtocolDisabled(globalConfig, 'srt') ? 0 : inputCounts.srt;
+  const hlsInputs = isProtocolDisabled(globalConfig, 'hls') ? 0 : inputCounts.hls;
 
   return {
     uptime,
@@ -110,6 +130,13 @@ export function calculateDashboardMetrics({
     srtConnections,
     hlsViewers,
     totalViewers,
+    rtspInputs,
+    rtspsInputs,
+    rtmpInputs,
+    rtmpsInputs,
+    webRTCInputs,
+    srtInputs,
+    hlsInputs,
     cards: buildDashboardMetricCards(
       {
         uptime,
@@ -126,6 +153,13 @@ export function calculateDashboardMetrics({
         srtConnections,
         hlsViewers,
         totalViewers,
+        rtspInputs,
+        rtspsInputs,
+        rtmpInputs,
+        rtmpsInputs,
+        webRTCInputs,
+        srtInputs,
+        hlsInputs,
       },
       serverInfo?.version,
       serverInfo !== undefined
@@ -160,39 +194,53 @@ function buildDashboardMetricCards(
       description: metrics.egressPartial ? 'Partial · Waiting for samples' : 'Sent by server',
     },
     {
-      label: 'RTSP Readers',
-      value: metrics.rtspViewers,
-      description: 'Active RTSP readers',
+      label: 'RTSP',
+      value: metrics.rtspInputs,
+      unit: 'in',
+      secondaryValue: metrics.rtspViewers,
+      secondaryUnit: 'out',
     },
     {
-      label: 'RTSPS Readers',
-      value: metrics.rtspsViewers,
-      description: 'Active RTSPS readers',
+      label: 'RTSPS',
+      value: metrics.rtspsInputs,
+      unit: 'in',
+      secondaryValue: metrics.rtspsViewers,
+      secondaryUnit: 'out',
     },
     {
-      label: 'RTMP Readers',
-      value: metrics.rtmpViewers,
-      description: 'Active RTMP readers',
+      label: 'RTMP',
+      value: metrics.rtmpInputs,
+      unit: 'in',
+      secondaryValue: metrics.rtmpViewers,
+      secondaryUnit: 'out',
     },
     {
-      label: 'RTMPS READERS',
-      value: metrics.rtmpsConnections,
-      description: 'Active RTMPS readers',
+      label: 'RTMPS',
+      value: metrics.rtmpsInputs,
+      unit: 'in',
+      secondaryValue: metrics.rtmpsConnections,
+      secondaryUnit: 'out',
     },
     {
-      label: 'WebRTC Readers',
-      value: metrics.webRTCViewers,
-      description: 'Active WebRTC readers',
+      label: 'WebRTC',
+      value: metrics.webRTCInputs,
+      unit: 'in',
+      secondaryValue: metrics.webRTCViewers,
+      secondaryUnit: 'out',
     },
     {
-      label: 'SRT READERS',
-      value: metrics.srtConnections,
-      description: 'Active SRT readers',
+      label: 'SRT',
+      value: metrics.srtInputs,
+      unit: 'in',
+      secondaryValue: metrics.srtConnections,
+      secondaryUnit: 'out',
     },
     {
-      label: 'HLS Readers',
-      value: metrics.hlsViewers,
-      description: 'Active HLS readers',
+      label: 'HLS',
+      value: metrics.hlsInputs,
+      unit: 'in',
+      secondaryValue: metrics.hlsViewers,
+      secondaryUnit: 'out',
     },
     {
       label: 'Total Readers',
@@ -220,6 +268,75 @@ function readerMatches(reader: Reader, normalizedKinds: Set<string>): boolean {
 
 function normalizeKind(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+const INPUT_SOURCE_KINDS: Record<InputProtocol, string[]> = {
+  rtsp: ['rtspSource', 'rtspSession', 'rtspConn', 'rtspConnection'],
+  rtsps: ['rtspsSource', 'rtspsSession', 'rtspsConn', 'rtspsConnection'],
+  rtmp: ['rtmpSource', 'rtmpConn', 'rtmpConnection'],
+  rtmps: ['rtmpsSource', 'rtmpsConn', 'rtmpsConnection'],
+  webrtc: ['webRTCSource', 'webRTCSession', 'webRTCConn', 'webRTCConnection'],
+  srt: ['srtSource', 'srtConn', 'srtConnection'],
+  hls: ['hlsSource', 'hlsClient'],
+};
+
+const INPUT_URL_PREFIXES: [InputProtocol, string[]][] = [
+  ['rtsps', ['rtsps://']],
+  ['rtsp', ['rtsp://']],
+  ['rtmps', ['rtmps://']],
+  ['rtmp', ['rtmp://']],
+  ['srt', ['srt://']],
+  ['hls', ['http://', 'https://']],
+];
+
+const inputSourceKindSets = Object.fromEntries(
+  (Object.keys(INPUT_SOURCE_KINDS) as InputProtocol[]).map((protocol) => [
+    protocol,
+    new Set(INPUT_SOURCE_KINDS[protocol].map(normalizeKind)),
+  ])
+) as Record<InputProtocol, Set<string>>;
+
+function countInputStreamsByProtocol(paths: PathItem[]): Record<InputProtocol, number> {
+  const counts: Record<InputProtocol, number> = {
+    rtsp: 0,
+    rtsps: 0,
+    rtmp: 0,
+    rtmps: 0,
+    webrtc: 0,
+    srt: 0,
+    hls: 0,
+  };
+
+  for (const path of paths) {
+    if (!isStreamOnline(path)) continue;
+    const protocol = classifyInputProtocol(path);
+    if (protocol) counts[protocol] += 1;
+  }
+
+  return counts;
+}
+
+function classifyInputProtocol(path: PathItem): InputProtocol | null {
+  const source = typeof path.source === 'string' ? path.source.trim().toLowerCase() : '';
+  if (source !== '') {
+    for (const [protocol, prefixes] of INPUT_URL_PREFIXES) {
+      if (prefixes.some((prefix) => source.startsWith(prefix))) return protocol;
+    }
+  }
+
+  const sourceInfo = path.sourceInfo;
+  if (!sourceInfo) return null;
+
+  for (const key of ['type', 'protocol']) {
+    const value = sourceInfo[key];
+    if (typeof value !== 'string' || value.trim() === '') continue;
+    const normalized = normalizeKind(value);
+    for (const protocol of Object.keys(inputSourceKindSets) as InputProtocol[]) {
+      if (inputSourceKindSets[protocol].has(normalized)) return protocol;
+    }
+  }
+
+  return null;
 }
 
 function isProtocolDisabled(config: GlobalConfig | undefined, key: keyof GlobalConfig): boolean {

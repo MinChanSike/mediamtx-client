@@ -171,7 +171,9 @@ export default function VideoPlayer({
             </div>
 
             <div className="flex items-center gap-1.5">
-              <Badge appearance="filled">{mode === 'webrtc' ? 'RTC (WHEP)' : 'HLS'}</Badge>
+              <Badge appearance="filled" size="small">
+                {mode === 'webrtc' ? 'RTC (WHEP)' : 'HLS'}
+              </Badge>
               <Button
                 size="small"
                 appearance="subtle"

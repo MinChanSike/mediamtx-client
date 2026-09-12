@@ -15,6 +15,7 @@ import type { OnNavItemSelectData } from '@fluentui/react-components';
 import {
   ChevronLeft20Regular,
   CircleFilled,
+  History24Regular,
   Home24Regular,
   SlideGrid20Filled,
   Settings24Regular,
@@ -23,11 +24,13 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@src/components/common/ThemeToggle';
 import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
-import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
+import { usePlaybackEndpoint } from '@src/hooks/usePlaybackEndpoint';
+import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
+import usePlaybackStore from '@src/store/usePlaybackStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
 
-type NavTab = 'dashboard' | 'streams';
+type NavTab = 'dashboard' | 'streams' | 'playback';
 
 type SidebarNavItem = {
   id: NavTab;
@@ -48,6 +51,12 @@ const NAV_ITEMS: SidebarNavItem[] = [
     label: 'Streams',
     path: STREAMS_ROUTE,
     icon: <Video24Regular />,
+  },
+  {
+    id: 'playback',
+    label: 'Playback',
+    path: PLAYBACK_ROUTE,
+    icon: <History24Regular />,
   },
 ];
 
@@ -194,6 +203,7 @@ const useStyles = makeStyles({
 
 export function pathToTab(pathname: string): NavTab {
   if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`)) return 'streams';
+  if (pathname === PLAYBACK_ROUTE || pathname.startsWith(`${PLAYBACK_ROUTE}/`)) return 'playback';
   return 'dashboard';
 }
 
@@ -220,13 +230,24 @@ export default function AppSidebar() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const serverUrl = useAppStore((s) => s.serverUrl);
   const setServerUrl = useAppStore((s) => s.setServerUrl);
+  const setPlaybackEndpointOverride = usePlaybackStore((s) => s.setEndpointOverride);
+  const playbackEndpoint = usePlaybackEndpoint();
 
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState(serverUrl);
+  const [playbackUrlInput, setPlaybackUrlInput] = useState(
+    playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? ''
+  );
 
   useEffect(() => {
     setUrlInput(serverUrl);
   }, [serverUrl]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setPlaybackUrlInput(playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? '');
+    }
+  }, [isEditing, playbackEndpoint.baseUrl, playbackEndpoint.derivedBaseUrl]);
 
   useEffect(() => {
     setActiveTab(pathToTab(location.pathname));
@@ -242,14 +263,22 @@ export default function AppSidebar() {
   };
 
   const handleSave = () => {
-    if (urlInput.trim()) {
-      setServerUrl(urlInput.trim());
-      setIsEditing(false);
+    const nextServerUrl = urlInput.trim();
+    if (!nextServerUrl) return;
+
+    const nextPlaybackUrl = playbackUrlInput.trim();
+    if (nextPlaybackUrl === playbackEndpoint.derivedBaseUrl || !nextPlaybackUrl) {
+      setPlaybackEndpointOverride(nextServerUrl, null);
+    } else {
+      setPlaybackEndpointOverride(nextServerUrl, nextPlaybackUrl);
     }
+    setServerUrl(nextServerUrl);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setUrlInput(serverUrl);
+    setPlaybackUrlInput(playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? '');
     setIsEditing(false);
   };
 
@@ -338,7 +367,7 @@ export default function AppSidebar() {
 
       {!isSidebarCollapsed && isEditing && (
         <div className={styles.editPanel}>
-          <Field label="MediaMTX API endpoint" size="small">
+          <Field label="Server API endpoint" size="small">
             <Input
               id="server-url-input"
               type="text"
@@ -348,6 +377,17 @@ export default function AppSidebar() {
               placeholder="http://localhost:9997"
               size="small"
               autoFocus
+            />
+          </Field>
+          <Field label="Playback server endpoint" size="small">
+            <Input
+              id="playback-server-url-input"
+              type="text"
+              value={playbackUrlInput}
+              onChange={(_event, data) => setPlaybackUrlInput(data.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="http://localhost:9996"
+              size="small"
             />
           </Field>
           <div className={styles.editActions}>
@@ -368,11 +408,11 @@ export default function AppSidebar() {
 
       {!isSidebarCollapsed && (
         <div className={styles.footer}>
-          <Tooltip content="Edit MediaMTX API endpoint" relationship="label">
+          <Tooltip content="Edit server endpoints" relationship="label">
             <Button
               id="server-url-edit-btn"
               aria-expanded={isEditing}
-              aria-label="Edit MediaMTX API endpoint"
+              aria-label="Edit server endpoints"
               appearance={isEditing ? 'secondary' : 'subtle'}
               icon={<Settings24Regular />}
               onClick={() => setIsEditing((current) => !current)}

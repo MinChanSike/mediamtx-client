@@ -12,11 +12,11 @@ import {
 } from '@fluentui/react-components';
 import {
   Add24Regular,
-  Grid20Regular,
   Grid24Regular,
   Search24Regular,
   Table24Regular,
 } from '@fluentui/react-icons';
+import GridLayoutIcon from '@src/components/common/GridLayoutIcon';
 
 const PROTOCOL_OPTIONS = [
   { value: 'all', label: 'All Protocols' },
@@ -95,12 +95,11 @@ const useStyles = makeStyles({
     borderBottom: 0,
   },
   gridLayoutButton: {
-    minWidth: '50px',
+    minWidth: '30px',
+    width: '30px',
     height: '26px',
     paddingRight: tokens.spacingHorizontalXXS,
     paddingLeft: tokens.spacingHorizontalXXS,
-    fontSize: tokens.fontSizeBase100,
-    fontWeight: tokens.fontWeightSemibold,
   },
 });
 
@@ -140,13 +139,11 @@ export default function StreamFilterBar({
               aria-label={`Use ${option} grid layout`}
               aria-pressed={gridLayout === option}
               appearance={gridLayout === option ? 'primary' : 'subtle'}
-              icon={<Grid20Regular />}
+              icon={<GridLayoutIcon layout={option} />}
               onClick={() => selectGridLayout(option)}
               size="small"
               className={styles.gridLayoutButton}
-            >
-              {option}
-            </Button>
+            />
           ))}
         </div>
       )}

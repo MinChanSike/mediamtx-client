@@ -4,6 +4,8 @@ interface MetricCardProps {
   label: string;
   value: string | number;
   unit?: string;
+  secondaryValue?: string | number;
+  secondaryUnit?: string;
   description?: string;
   compact?: boolean;
 }
@@ -42,7 +44,15 @@ const useStyles = makeStyles({
   },
 });
 
-export default function MetricCard({ label, value, unit, description, compact }: MetricCardProps) {
+export default function MetricCard({
+  label,
+  value,
+  unit,
+  secondaryValue,
+  secondaryUnit,
+  description,
+  compact,
+}: MetricCardProps) {
   const styles = useStyles();
 
   return (
@@ -54,6 +64,19 @@ export default function MetricCard({ label, value, unit, description, compact }:
           <Text className={styles.unit} size={200}>
             {unit}
           </Text>
+        )}
+        {secondaryValue !== undefined && (
+          <>
+            <Text className={styles.unit} size={200}>
+              ·
+            </Text>
+            {secondaryValue}
+            {secondaryUnit && (
+              <Text className={styles.unit} size={200}>
+                {secondaryUnit}
+              </Text>
+            )}
+          </>
         )}
       </Text>
       {description && <Caption1 className={styles.description}>{description}</Caption1>}
