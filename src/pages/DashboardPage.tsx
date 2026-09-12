@@ -12,7 +12,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Code20Regular, Dismiss24Regular } from '@fluentui/react-icons';
+import { ArrowClockwise20Regular, Code20Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
 import PageHeader from '@src/components/common/PageHeader';
 import ConfigRawView from '@src/components/config/ConfigRawView';
@@ -152,7 +152,13 @@ export function RawConfigDrawer({
 export default function DashboardPage() {
   const styles = useStyles();
   const [isRawConfigOpen, setIsRawConfigOpen] = useState(false);
-  const { data: config, isLoading: isConfigLoading, isError: isConfigError } = useMediaMTXConfig();
+  const {
+    data: config,
+    isLoading: isConfigLoading,
+    isError: isConfigError,
+    isFetching: isConfigFetching,
+    refetch: refreshConfig,
+  } = useMediaMTXConfig();
   const {
     data: rawConfig,
     isLoading: isRawConfigLoading,
@@ -179,14 +185,25 @@ export default function DashboardPage() {
               Read-only MediaMTX server configuration
             </Text>
           </div>
-          <Button
-            appearance="secondary"
-            icon={<Code20Regular />}
-            onClick={() => setIsRawConfigOpen(true)}
-            size="small"
-          >
-            Show Raw JSON
-          </Button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button
+              appearance="subtle"
+              icon={<ArrowClockwise20Regular />}
+              aria-label="Refresh configuration"
+              title="Refresh configuration"
+              disabled={isConfigFetching}
+              onClick={() => void refreshConfig()}
+              size="small"
+            />
+            <Button
+              appearance="secondary"
+              icon={<Code20Regular />}
+              onClick={() => setIsRawConfigOpen(true)}
+              size="small"
+            >
+              Show Raw JSON
+            </Button>
+          </div>
         </div>
 
         {isConfigLoading && <Spinner label="Loading configuration..." />}

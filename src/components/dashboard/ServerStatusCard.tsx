@@ -10,6 +10,7 @@ import {
   tokens,
 } from '@fluentui/react-components';
 import { useMediaMTXConfig } from '@src/hooks/useMediaMTXConfig';
+import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
 import useAppStore from '@src/store/useAppStore';
 import StatusBadge from '@src/components/common/StatusBadge';
 import type { GlobalConfig } from '@src/types/config';
@@ -159,7 +160,8 @@ export function ProtocolRow({ row }: ProtocolRowProps) {
 export default function ServerStatusCard() {
   const styles = useStyles();
   const serverUrl = useAppStore((s) => s.serverUrl);
-  const { data, isError, isPending } = useMediaMTXConfig();
+  const { data } = useMediaMTXConfig();
+  const { isError, isPending } = useStoreBackedServerInfo();
   const status = getApiAvailabilityStatus({ isError, isPending });
   const listenerRows = data ? getServerListenerRows(data) : [];
 

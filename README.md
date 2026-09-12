@@ -18,7 +18,7 @@ This project also shows a practical AI-assisted development process. Almost all 
 
 The application is a browser-only Vite, React, and TypeScript client. It talks directly to the configured MediaMTX API base URL. This repository does not include a backend service.
 
-State is split across small Zustand stores. These stores handle app preferences, dashboard metrics, player assignments, and MediaMTX API data. API hooks load server info, paths, global config, raw config, path details, viewer details, and stream changes. Live paths, server info, and global config refresh every 3000 ms while they are being used.
+State is split across small Zustand stores. These stores handle app preferences, dashboard metrics, player assignments, and MediaMTX API data. API hooks load server info, paths, global config, raw config, path details, viewer details, and stream changes. Live paths and server info refresh every 3000 ms while in use and visible, and refresh on return to the tab. Global configuration loads on entry, explicit refresh, and relevant mutations. Path configuration metadata is fetched alongside runtime paths.
 
 The UI has one main app shell with Dashboard and Streams pages. The production build uses `vite-plugin-singlefile`, so the app can be shipped as one portable `index.html` file.
 
@@ -131,7 +131,8 @@ The repository includes Bun tests for user preferences, uptime calculation, dash
 ### Dashboard
 
 - Server status card with the active API endpoint and protocol listener addresses.
-- Server and stream metrics, including uptime, active streams, byte totals, and active reader counts by protocol.
+- Server and stream metrics, including uptime, online streams, ingress/egress transfer rates, and total readers. Protocol reader counts are collapsed by default.
+- Last successful metrics refresh and explicit stale/unavailable states.
 - MediaMTX configuration summary grouped into general, network, service access, diagnostics, playback, and path default sections.
 - Raw configuration JSON drawer loaded on demand from the MediaMTX API.
 - Loading and error states for dashboard API data.
@@ -140,7 +141,7 @@ The repository includes Bun tests for user preferences, uptime calculation, dash
 
 - Search and protocol filters for streams.
 - Table, card, and multi-player grid views.
-- Sortable stream table with status, protocol, track count, reader count, byte totals, and stream actions.
+- Sortable stream table with status, protocol, track count, reader count, ingress/egress rates, and stream actions.
 - Card view actions for playback, grid assignment, details, edit, delete, reader inspection, and source kick where available.
 - Add stream drawer with protocol selection, source URI detection, validation, and MediaMTX path creation.
 - Edit and delete flows for configured streams.
@@ -155,6 +156,12 @@ The repository includes Bun tests for user preferences, uptime calculation, dash
 - If WebRTC setup fails or times out, playback falls back to HLS.
 - HLS playback uses native browser HLS where available and `hls.js` otherwise.
 - Generated playback URLs include WebRTC WHEP, HLS, RTSP, RTMP, and SRT formats based on the configured MediaMTX host and listener ports.
+
+### Transfer Rates
+
+Dashboard, table, cards, stream details, and the single-player drawer share one in-memory rate sample per path. Ingress is received by MediaMTX; egress is sent by MediaMTX. Rates use counter deltas divided by the measured elapsed time, normally around three seconds, formatted as B/s, KiB/s, or MiB/s. They are interval averages, not instantaneous bitrate measurements.
+
+Modern `inboundBytes`/`outboundBytes` counters take precedence over legacy aliases. Raw counters remain unchanged. The first sample, missing counters, counter resets, lifecycle changes, and failed requests display an unavailable dash. Unchanged valid counters display `0 B/s`. Samples expire after six seconds; recovery needs two fresh samples. Dashboard rates sum individual path rates and indicate partial coverage while samples are missing. All runtime-path pages must load before a snapshot is accepted.
 
 ### Limitations
 

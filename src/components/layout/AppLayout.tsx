@@ -1,35 +1,36 @@
-import { makeStyles, tokens } from '@fluentui/react-components';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import AppSidebar from '@src/components/layout/AppSidebar';
-import DashboardPage from '@src/pages/DashboardPage';
-import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
-import StreamsPage from '@src/pages/StreamsPage';
+import { makeStyles, tokens } from "@fluentui/react-components";
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppSidebar from "@src/components/layout/AppSidebar";
+import DashboardPage from "@src/pages/DashboardPage";
+import { DASHBOARD_ROUTE, STREAMS_ROUTE } from "@src/router/routes";
+import StreamsPage from "@src/pages/StreamsPage";
 
 const useStyles = makeStyles({
   root: {
-    display: 'flex',
-    width: '100vw',
-    height: '100vh',
-    overflow: 'hidden',
+    display: "flex",
+    width: "100vw",
+    height: "100vh",
+    overflow: "hidden",
     backgroundColor: tokens.colorNeutralBackground2,
     color: tokens.colorNeutralForeground1,
   },
   main: {
     minWidth: 0,
     flex: 1,
-    overflow: 'auto',
+    overflow: "auto",
     backgroundColor: tokens.colorNeutralBackground1,
   },
   pageFrame: {
-    boxSizing: 'border-box',
-    width: '100%',
-    maxWidth: '1440px',
-    marginRight: 'auto',
-    marginLeft: 'auto',
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: "1440px",
+    marginRight: "auto",
+    marginLeft: "auto",
     padding: `${tokens.spacingVerticalL} ${tokens.spacingHorizontalXL}`,
-    '@media (max-width: 720px)': {
+    "@media (max-width: 720px)": {
       padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalS}`,
     },
+    position: "relative",
   },
 });
 

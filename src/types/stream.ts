@@ -8,8 +8,8 @@ export interface PathItem {
   available?: boolean;
   ready?: boolean;
   tracks: Track[];
-  bytesReceived: number;
-  bytesSent: number;
+  bytesReceived?: number;
+  bytesSent?: number;
   inboundBytes?: number;
   outboundBytes?: number;
   totalBytesReceived?: number;

@@ -19,7 +19,8 @@ import { Dismiss24Regular } from '@fluentui/react-icons';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
 import { useStoreBackedPathDetail } from '@src/hooks/useMediaMTXApi';
 import type { PathItem } from '@src/types/stream';
-import { formatBytes } from '@src/utils/formatters';
+import { formatByteRate } from '@src/utils/formatters';
+import { usePathTransferRate } from '@src/hooks/useTransferRates';
 import StatusBadge from '@src/components/common/StatusBadge';
 import { isStreamOnline } from '@src/utils/streamStatus';
 import { getDisplayProtocol } from '@src/utils/streamDisplay';
@@ -106,6 +107,7 @@ function DetailSection({ label, children }: { label: string; children: ReactNode
 }
 
 export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamDetailsDrawerProps) {
+  const rate = usePathTransferRate(stream?.name);
   const styles = useStyles();
   const closeButtonStyles = useCloseButtonStyles();
   const [selectedTab, setSelectedTab] = useState<StreamDetailsTab>('source');
@@ -142,7 +144,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
       <OverlayDrawer
         open={isOpen && !!stream}
         position="end"
-        style={{ width: 420 }}
+        style={{ width: 420, maxWidth: '100vw' }}
         onOpenChange={(_, data) => {
           if (!data.open) onClose();
         }}
@@ -183,12 +185,12 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                   <Text>{stream.tracks.length}</Text>
                 </DetailSection>
 
-                <DetailSection label="Bytes In">
-                  <Text>{formatBytes(stream.bytesReceived)}</Text>
+                <DetailSection label="Ingress">
+                  <Text>{formatByteRate(rate.inboundBytesPerSecond)}</Text>
                 </DetailSection>
 
-                <DetailSection label="Bytes Out">
-                  <Text>{formatBytes(stream.bytesSent)}</Text>
+                <DetailSection label="Egress">
+                  <Text>{formatByteRate(rate.outboundBytesPerSecond)}</Text>
                 </DetailSection>
               </div>
 

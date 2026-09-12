@@ -39,19 +39,31 @@ describe('Server dashboard listener model', () => {
     const staleConfig = baseConfig;
 
     expect(staleConfig.apiAddress).toBe('127.0.0.1:9997');
-    expect(getApiAvailabilityStatus({ data: staleConfig, isError: true, isPending: false })).toBe(
-      'offline'
-    );
-    expect(getApiAvailabilityStatus({ data: staleConfig, isError: true, isPending: true })).toBe(
-      'offline'
-    );
+    expect(
+      getApiAvailabilityStatus({
+        data: staleConfig,
+        isError: true,
+        isPending: false,
+      })
+    ).toBe('offline');
+    expect(
+      getApiAvailabilityStatus({
+        data: staleConfig,
+        isError: true,
+        isPending: true,
+      })
+    ).toBe('offline');
   });
 
   test('reports dashboard API status as connecting only while pending and online on success', () => {
     expect(getApiAvailabilityStatus({ isError: false, isPending: true })).toBe('connecting');
-    expect(getApiAvailabilityStatus({ data: baseConfig, isError: false, isPending: false })).toBe(
-      'online'
-    );
+    expect(
+      getApiAvailabilityStatus({
+        data: baseConfig,
+        isError: false,
+        isPending: false,
+      })
+    ).toBe('online');
   });
 
   test('uses the shared error-first status helper for all API status surfaces', async () => {
@@ -205,8 +217,8 @@ describe('Server dashboard metrics model', () => {
     expect(metrics).toMatchObject({
       uptime: 0,
       activePaths: 0,
-      bytesReceived: 0,
-      bytesSent: 0,
+      inboundBytesPerSecond: null,
+      outboundBytesPerSecond: null,
       rtspViewers: 0,
       rtspsViewers: 0,
       rtmpViewers: 0,
@@ -220,8 +232,8 @@ describe('Server dashboard metrics model', () => {
       {
         Uptime: '-',
         'Active Streams': 0,
-        'Bytes Received': '0 B',
-        'Bytes Sent': '0 B',
+        Ingress: '\u2014',
+        Egress: '\u2014',
         'Total Readers': 0,
       }
     );
@@ -229,6 +241,11 @@ describe('Server dashboard metrics model', () => {
 
   test('derives traffic, uptime, and displayed reader metrics without counting RTSP connections', () => {
     const metrics = calculateDashboardMetrics({
+      ratesStatus: 'fresh',
+      rates: {
+        alpha: { inboundBytesPerSecond: 1024, outboundBytesPerSecond: 4096 },
+        bravo: { inboundBytesPerSecond: 2048, outboundBytesPerSecond: 8192 },
+      },
       globalConfig: baseConfig,
       serverInfo: {
         version: 'v1.12.3',
@@ -241,6 +258,7 @@ describe('Server dashboard metrics model', () => {
         items: [
           {
             name: 'alpha',
+            online: true,
             source: 'publisher',
             sourceError: '',
             tracks: [],
@@ -274,9 +292,9 @@ describe('Server dashboard metrics model', () => {
 
     expect(metrics).toMatchObject({
       uptime: 120,
-      activePaths: 4,
-      bytesReceived: 3072,
-      bytesSent: 12288,
+      activePaths: 1,
+      inboundBytesPerSecond: 3072,
+      outboundBytesPerSecond: 12288,
       rtspViewers: 1,
       rtspsViewers: 1,
       rtmpViewers: 1,
@@ -295,9 +313,9 @@ describe('Server dashboard metrics model', () => {
     );
     expect(cardsByLabel).toMatchObject({
       Uptime: { value: '2 minutes', description: 'MediaMTX v1.12.3' },
-      'Active Streams': { value: 4 },
-      'Bytes Received': { value: '3 KB' },
-      'Bytes Sent': { value: '12 KB' },
+      'Active Streams': { value: 1 },
+      Ingress: { value: '3.0 KiB/s' },
+      Egress: { value: '12.0 KiB/s' },
       'RTSP Readers': { value: 1 },
       'RTSPS Readers': { value: 1 },
       'RTMP Readers': { value: 1 },
@@ -343,8 +361,18 @@ describe('Server dashboard metrics model', () => {
             bytesReceived: 0,
             bytesSent: 0,
             readers: [
-              { id: 'rtmp', type: 'rtmpConnection', protocol: 'rtmp', state: 'read' },
-              { id: 'webrtc', type: 'webrtcConnection', protocol: 'webrtc', state: 'read' },
+              {
+                id: 'rtmp',
+                type: 'rtmpConnection',
+                protocol: 'rtmp',
+                state: 'read',
+              },
+              {
+                id: 'webrtc',
+                type: 'webrtcConnection',
+                protocol: 'webrtc',
+                state: 'read',
+              },
               { id: 'hls', type: 'hlsMuxer', protocol: 'hls', state: 'read' },
             ],
           },
@@ -560,7 +588,9 @@ describe('Server dashboard metrics model', () => {
     expect(dashboardHook).toContain('useStoreBackedGlobalConfig');
     expect(dashboardHook).toContain('useStoreBackedServerInfo');
     expect(pathsHook).toContain('useStoreBackedPaths');
-    expect(integrationLayer).toContain('const LIVE_REFRESH_MS = 3000');
+    expect(integrationLayer).toContain(
+      "import { LIVE_REFRESH_MS } from '@src/utils/transferRates'"
+    );
     expect(integrationLayer).toContain("import useSWR, { mutate as mutateSWR } from 'swr'");
     expect(integrationLayer).toContain('pathsKey(serverUrl)');
     expect(integrationLayer).toContain('serverInfoKey(serverUrl)');

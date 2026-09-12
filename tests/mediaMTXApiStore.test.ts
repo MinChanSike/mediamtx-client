@@ -212,10 +212,7 @@ async function flushAsyncWork() {
   });
 }
 
-async function advanceTimers(
-  timers: ReturnType<typeof installFakeTimers>,
-  milliseconds: number
-) {
+async function advanceTimers(timers: ReturnType<typeof installFakeTimers>, milliseconds: number) {
   await act(async () => {
     timers.advanceBy(milliseconds);
     await flushMicrotasks();
@@ -270,7 +267,11 @@ describe('MediaMTX API Zustand store integration', () => {
     await refreshGlobalConfigNow();
     await refreshRawConfigNow();
     await refreshPathDetailNow('camera-1');
-    await refreshViewerDetailNow({ id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' });
+    await refreshViewerDetailNow({
+      id: 'viewer-1',
+      type: 'rtmpConn',
+      endpoint: 'rtmpconns',
+    });
 
     const state = useMediaMTXApiStore.getState();
     expect(state.paths.data?.items[0]).toMatchObject({
@@ -284,8 +285,14 @@ describe('MediaMTX API Zustand store integration', () => {
     expect(state.serverInfo.data?.uptime).toBeGreaterThanOrEqual(30);
     expect(state.serverInfo.data?.uptime).toBeLessThan(32);
     expect(state.globalConfig.data?.apiAddress).toBe('127.0.0.1:9997');
-    expect(state.rawConfig.data?.pathDefaults).toEqual({ source: 'publisher', record: false });
-    expect(state.pathDetails['camera-1'].data).toEqual({ name: 'camera-1', ready: true });
+    expect(state.rawConfig.data?.pathDefaults).toEqual({
+      source: 'publisher',
+      record: false,
+    });
+    expect(state.pathDetails['camera-1'].data).toEqual({
+      name: 'camera-1',
+      ready: true,
+    });
     expect(state.viewerDetails['rtmpconns:viewer-1'].data).toEqual({
       id: 'viewer-1',
       state: 'read',
@@ -470,10 +477,10 @@ describe('MediaMTX API Zustand store integration', () => {
     expect(snapshot).toMatchObject({
       swrCachePrefix: 'mediamtx-api',
       liveRefreshMs: 3000,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      refreshWhenHidden: true,
-      refreshWhenOffline: true,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      refreshWhenHidden: false,
+      refreshWhenOffline: false,
       shouldRetryOnError: false,
     });
   });
@@ -537,12 +544,12 @@ describe('MediaMTX API Zustand store integration', () => {
       await advanceTimers(timers, 1);
       expect(countRequestsEndingWith(requests, '/v3/paths/list')).toBe(2);
       expect(countRequestsEndingWith(requests, '/v3/info')).toBe(2);
-      expect(countRequestsEndingWith(requests, '/v3/config/global/get')).toBe(2);
+      expect(countRequestsEndingWith(requests, '/v3/config/global/get')).toBe(1);
 
       await advanceTimers(timers, 3000);
       expect(countRequestsEndingWith(requests, '/v3/paths/list')).toBe(3);
       expect(countRequestsEndingWith(requests, '/v3/info')).toBe(3);
-      expect(countRequestsEndingWith(requests, '/v3/config/global/get')).toBe(3);
+      expect(countRequestsEndingWith(requests, '/v3/config/global/get')).toBe(1);
 
       await act(async () => {
         renderer?.unmount();
@@ -573,7 +580,10 @@ describe('MediaMTX API Zustand store integration', () => {
       useStoreBackedPathDetail('camera-1', false);
       useStoreBackedPathDetail(null, true);
       useStoreBackedPathDetail('', true);
-      useStoreBackedViewerDetail({ id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' }, false);
+      useStoreBackedViewerDetail(
+        { id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' },
+        false
+      );
       useStoreBackedViewerDetail(null, true);
       return null;
     }
@@ -618,11 +628,15 @@ describe('MediaMTX API Zustand store integration', () => {
         await flushMicrotasks();
       });
 
-      expect(requests).toContain('GET http://conditional-enabled.mediamtx.test/v3/config/global/get');
+      expect(requests).toContain(
+        'GET http://conditional-enabled.mediamtx.test/v3/config/global/get'
+      );
       expect(requests).toContain(
         'GET http://conditional-enabled.mediamtx.test/v3/config/pathdefaults/get'
       );
-      expect(requests).toContain('GET http://conditional-enabled.mediamtx.test/v3/paths/get/camera-1');
+      expect(requests).toContain(
+        'GET http://conditional-enabled.mediamtx.test/v3/paths/get/camera-1'
+      );
       expect(requests).toContain(
         'GET http://conditional-enabled.mediamtx.test/v3/rtmpconns/get/viewer-1'
       );
@@ -648,7 +662,10 @@ describe('MediaMTX API Zustand store integration', () => {
     function DisabledConsumers() {
       useStoreBackedRawConfig(false);
       useStoreBackedPathDetail('camera-1', false);
-      useStoreBackedViewerDetail({ id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' }, false);
+      useStoreBackedViewerDetail(
+        { id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' },
+        false
+      );
       return null;
     }
 
@@ -672,11 +689,15 @@ describe('MediaMTX API Zustand store integration', () => {
         await flushMicrotasks();
       });
 
-      expect(requests).toContain('GET http://conditional-toggle.mediamtx.test/v3/config/global/get');
+      expect(requests).toContain(
+        'GET http://conditional-toggle.mediamtx.test/v3/config/global/get'
+      );
       expect(requests).toContain(
         'GET http://conditional-toggle.mediamtx.test/v3/config/pathdefaults/get'
       );
-      expect(requests).toContain('GET http://conditional-toggle.mediamtx.test/v3/paths/get/camera-1');
+      expect(requests).toContain(
+        'GET http://conditional-toggle.mediamtx.test/v3/paths/get/camera-1'
+      );
       expect(requests).toContain(
         'GET http://conditional-toggle.mediamtx.test/v3/rtmpconns/get/viewer-1'
       );
@@ -707,51 +728,59 @@ describe('MediaMTX API Zustand store integration', () => {
     expect(state.rawConfig.data).toBeUndefined();
   });
 
-  test('does not commit an in-flight response after the server URL changes', async () => {
-    let resolveOldPaths: ((response: Response) => void) | undefined;
-    resetStores('http://old-mediamtx.test');
+  test.each([false, true])(
+    'does not commit an in-flight response after a server switch (return: %s)',
+    async (returnToOriginal) => {
+      let resolveOldPaths: ((response: Response) => void) | undefined;
+      resetStores('http://old-mediamtx.test');
 
-    globalThis.fetch = (async (input) => {
-      const url = String(input);
+      globalThis.fetch = (async (input) => {
+        const url = String(input);
 
-      if (url === 'http://old-mediamtx.test/v3/paths/list') {
-        return new Promise<Response>((resolve) => {
-          resolveOldPaths = resolve;
-        });
-      }
-      if (url === 'http://old-mediamtx.test/v3/config/paths/list') {
-        return jsonResponse({ itemCount: 0, pageCount: 1, items: [] });
-      }
+        if (url === 'http://old-mediamtx.test/v3/paths/list') {
+          return new Promise<Response>((resolve) => {
+            resolveOldPaths = resolve;
+          });
+        }
+        if (url === 'http://old-mediamtx.test/v3/config/paths/list') {
+          return jsonResponse({ itemCount: 0, pageCount: 1, items: [] });
+        }
 
-      return jsonResponse({ error: 'not found' }, 404);
-    }) as typeof fetch;
+        return jsonResponse({ error: 'not found' }, 404);
+      }) as typeof fetch;
 
-    const refresh = refreshPathsNow();
-    useAppStore.getState().setServerUrl('http://new-mediamtx.test');
-    resolveOldPaths?.(
-      jsonResponse({
-        itemCount: 1,
-        pageCount: 1,
-        items: [
-          {
-            name: 'old-camera',
-            source: 'publisher',
-            sourceError: '',
-            tracks: [],
-            bytesReceived: 0,
-            bytesSent: 0,
-            readers: [],
-          },
-        ],
-      })
-    );
-    await refresh;
+      const refresh = refreshPathsNow();
+      useAppStore.getState().setServerUrl('http://new-mediamtx.test');
+      if (returnToOriginal) useAppStore.getState().setServerUrl('http://old-mediamtx.test');
+      resolveOldPaths?.(
+        jsonResponse({
+          itemCount: 1,
+          pageCount: 1,
+          items: [
+            {
+              name: 'old-camera',
+              source: 'publisher',
+              sourceError: '',
+              tracks: [],
+              bytesReceived: 0,
+              bytesSent: 0,
+              readers: [],
+            },
+          ],
+        })
+      );
+      await refresh;
 
-    const state = useMediaMTXApiStore.getState();
-    expect(state.serverUrl).toBe('http://new-mediamtx.test');
-    expect(state.paths.data).toBeUndefined();
-    expect(state.paths.error).toBeNull();
-  });
+      const state = useMediaMTXApiStore.getState();
+      expect(state.serverUrl).toBe(
+        returnToOriginal ? 'http://old-mediamtx.test' : 'http://new-mediamtx.test'
+      );
+      expect(state.transferSamples).toEqual({});
+      expect(state.transferRates).toEqual({});
+      expect(state.paths.data).toBeUndefined();
+      expect(state.paths.error).toBeNull();
+    }
+  );
 
   test('does not let an older same-server paths refresh overwrite a newer success', async () => {
     let resolveFirstPaths: ((response: Response) => void) | undefined;
@@ -798,6 +827,8 @@ describe('MediaMTX API Zustand store integration', () => {
     );
     await secondRefresh;
     expect(useMediaMTXApiStore.getState().paths.data?.items[0]?.name).toBe('camera-new');
+    const acceptedSamples = useMediaMTXApiStore.getState().transferSamples;
+    const acceptedRates = useMediaMTXApiStore.getState().transferRates;
 
     resolveFirstPaths?.(
       jsonResponse({
@@ -817,6 +848,9 @@ describe('MediaMTX API Zustand store integration', () => {
       })
     );
     await firstRefresh;
+
+    expect(useMediaMTXApiStore.getState().transferSamples).toBe(acceptedSamples);
+    expect(useMediaMTXApiStore.getState().transferRates).toBe(acceptedRates);
 
     expect(useMediaMTXApiStore.getState().paths.data?.items[0]?.name).toBe('camera-new');
     expect(useMediaMTXApiStore.getState().paths.error).toBeNull();
@@ -1005,7 +1039,10 @@ describe('MediaMTX API Zustand store integration', () => {
 
       const state = useMediaMTXApiStore.getState();
       expect(state.rawConfig.data?.logLevel).toBe('debug');
-      expect(state.rawConfig.data?.pathDefaults).toEqual({ source: 'publisher', record: false });
+      expect(state.rawConfig.data?.pathDefaults).toEqual({
+        source: 'publisher',
+        record: false,
+      });
       expect(state.rawConfig.error).toBeNull();
       expect(requests).toContain(
         'POST http://raw-error-refresh.mediamtx.test/v3/config/paths/add/camera-2'
@@ -1013,9 +1050,9 @@ describe('MediaMTX API Zustand store integration', () => {
       expect(requests.filter((request) => request.endsWith('/v3/config/global/get'))).toHaveLength(
         2
       );
-      expect(requests.filter((request) => request.endsWith('/v3/config/pathdefaults/get'))).toHaveLength(
-        2
-      );
+      expect(
+        requests.filter((request) => request.endsWith('/v3/config/pathdefaults/get'))
+      ).toHaveLength(2);
     } finally {
       await act(async () => {
         renderer?.unmount();
@@ -1129,16 +1166,20 @@ describe('MediaMTX API Zustand store integration', () => {
       sourceUri: 'rtsp://camera:554/edited',
     });
     await runDeleteStreamMutation('camera-1');
-    await runKickStreamTargetMutation({ id: 'viewer-1', type: 'rtmpConn', endpoint: 'rtmpconns' });
+    await runKickStreamTargetMutation({
+      id: 'viewer-1',
+      type: 'rtmpConn',
+      endpoint: 'rtmpconns',
+    });
 
     expect(requests).toContain('PATCH http://mediamtx.test/v3/config/paths/patch/camera-1');
     expect(requests).toContain('DELETE http://mediamtx.test/v3/config/paths/delete/camera-1');
     expect(requests).toContain('POST http://mediamtx.test/v3/rtmpconns/kick/viewer-1');
     expect(requests.filter((request) => request.endsWith('/v3/paths/list'))).toHaveLength(4);
     expect(requests.filter((request) => request.endsWith('/v3/config/global/get'))).toHaveLength(6);
-    expect(requests.filter((request) => request.endsWith('/v3/config/pathdefaults/get'))).toHaveLength(
-      3
-    );
+    expect(
+      requests.filter((request) => request.endsWith('/v3/config/pathdefaults/get'))
+    ).toHaveLength(3);
   });
 
   test('React Query implementation and dependency references are removed from source and package metadata', async () => {

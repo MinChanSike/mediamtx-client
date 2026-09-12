@@ -15,6 +15,9 @@ import VideoPlayer from '@src/components/streams/VideoPlayer';
 import PlaybackUrls from '@src/components/streams/PlaybackUrls';
 import type { PathItem } from '@src/types/stream';
 import { getDisplayProtocol } from '@src/utils/streamDisplay';
+import { usePathTransferRate } from '@src/hooks/useTransferRates';
+import { formatByteRate } from '@src/utils/formatters';
+import { UNAVAILABLE_RATE, type TransferRate } from '@src/utils/transferRates';
 
 const useStyles = makeStyles({
   body: {
@@ -29,13 +32,14 @@ const useStyles = makeStyles({
   },
   metrics: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: tokens.spacingHorizontalS,
     paddingBlock: tokens.spacingVerticalS,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   metricItem: {
     minWidth: 0,
+    overflowWrap: 'anywhere',
   },
   metricLabel: {
     color: tokens.colorNeutralForeground3,
@@ -43,17 +47,15 @@ const useStyles = makeStyles({
   },
 });
 
-export function getSinglePlayerMetrics(stream: PathItem) {
-  const inboundBytes = stream.inboundBytes ?? stream.bytesReceived;
-  const outboundBytes = stream.outboundBytes ?? stream.bytesSent;
-
+export function getSinglePlayerMetrics(stream: PathItem, rate: TransferRate = UNAVAILABLE_RATE) {
   return [
     { label: 'Protocol', value: getDisplayProtocol(stream).toUpperCase() },
     { label: 'Track Count', value: String(stream.tracks.length) },
     {
-      label: 'Bytes In/Out',
-      value: `${inboundBytes.toLocaleString()} / ${outboundBytes.toLocaleString()}`,
+      label: 'Ingress',
+      value: formatByteRate(rate.inboundBytesPerSecond),
     },
+    { label: 'Egress', value: formatByteRate(rate.outboundBytesPerSecond) },
     { label: 'Total Readers', value: String(stream.readers.length) },
   ];
 }
@@ -62,6 +64,7 @@ export default function SinglePlayerDrawer() {
   const styles = useStyles();
   const closeButtonStyles = useCloseButtonStyles();
   const drawerStream = usePlayerStore((s) => s.drawerStream);
+  const rate = usePathTransferRate(drawerStream?.name);
   const isDrawerOpen = usePlayerStore((s) => s.isDrawerOpen);
   const setIsDrawerOpen = usePlayerStore((s) => s.setIsDrawerOpen);
 
@@ -98,6 +101,21 @@ export default function SinglePlayerDrawer() {
         <DrawerBody>
           <div className={styles.body}>
             <VideoPlayer streamName={drawerStream.name} className={styles.player} />
+
+            <div className={styles.metrics}>
+              {getSinglePlayerMetrics(drawerStream, rate)
+                .filter((metric) => metric.label === 'Ingress' || metric.label === 'Egress')
+                .map((metric) => (
+                  <div key={metric.label} className={styles.metricItem}>
+                    <Text size={200} className={styles.metricLabel}>
+                      {metric.label}
+                    </Text>
+                    <Text block font="monospace">
+                      {metric.value}
+                    </Text>
+                  </div>
+                ))}
+            </div>
 
             <Text weight="semibold" className="mt-3">
               Playback URLs

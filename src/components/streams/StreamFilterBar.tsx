@@ -12,7 +12,6 @@ import {
 } from '@fluentui/react-components';
 import {
   Add24Regular,
-  Apps24Regular,
   Grid20Regular,
   Grid24Regular,
   Search24Regular,
@@ -33,7 +32,7 @@ const PROTOCOL_OPTIONS = [
 
 const GRID_LAYOUT_OPTIONS = ['1x1', '2x2', '3x3', '4x4'] as const;
 
-type LayoutMode = 'table' | 'cards' | 'grid';
+type LayoutMode = 'table' | 'grid';
 type GridLayout = '1x1' | '2x2' | '3x3' | '4x4';
 
 interface StreamFilterBarProps {
@@ -181,9 +180,6 @@ export default function StreamFilterBar({
         <TabList selectedValue={layout} onTabSelect={handleLayoutSelect} size="small">
           <Tab id="layout-table" value="table" icon={<Table24Regular />}>
             Table
-          </Tab>
-          <Tab id="layout-cards" value="cards" icon={<Apps24Regular />}>
-            Cards
           </Tab>
           <Tab id="layout-grid" value="grid" icon={<Grid24Regular />}>
             Grid

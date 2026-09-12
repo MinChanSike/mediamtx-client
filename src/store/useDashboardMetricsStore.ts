@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import type { ServerInfo } from '@src/api/serverInfoApi';
 import type { PathItem, PathList, Reader } from '@src/schemas/pathSchema';
 import type { GlobalConfig } from '@src/types/config';
-import { formatBytes, formatUptime } from '@src/utils/formatters';
+import { formatByteRate, formatUptime } from '@src/utils/formatters';
+import { sumTransferRates, type TransferRate } from '@src/utils/transferRates';
+import { isStreamOnline } from '@src/utils/streamStatus';
 
 export interface DashboardMetricCard {
   label: string;
@@ -13,8 +15,10 @@ export interface DashboardMetricCard {
 export interface DashboardMetrics {
   uptime: number;
   activePaths: number;
-  bytesReceived: number;
-  bytesSent: number;
+  inboundBytesPerSecond: number | null;
+  outboundBytesPerSecond: number | null;
+  ingressPartial: boolean;
+  egressPartial: boolean;
   rtspViewers: number;
   rtspsViewers: number;
   rtmpViewers: number;
@@ -27,6 +31,8 @@ export interface DashboardMetrics {
 }
 
 interface DashboardMetricsInputs {
+  rates?: Record<string, TransferRate>;
+  ratesStatus?: 'unavailable' | 'fresh' | 'stale';
   paths?: PathList;
   globalConfig?: GlobalConfig;
   serverInfo?: ServerInfo;
@@ -45,23 +51,20 @@ const useDashboardMetricsStore = create<DashboardMetricsState>((set) => ({
 }));
 
 export function calculateDashboardMetrics({
+  rates = {},
+  ratesStatus = 'unavailable',
   paths,
   globalConfig,
   serverInfo,
 }: DashboardMetricsInputs): DashboardMetrics {
   const pathItems = paths?.items ?? [];
   const uptime = sanitizeCount(serverInfo?.uptime);
-  const activePaths = sanitizeCount(paths?.itemCount ?? pathItems.length);
-  const bytesReceived = pathItems.reduce(
-    (total, path) =>
-      total + getPathByteTotal(path, ['bytesReceived', 'inboundBytes', 'totalBytesReceived']),
-    0
-  );
-  const bytesSent = pathItems.reduce(
-    (total, path) =>
-      total + getPathByteTotal(path, ['bytesSent', 'outboundBytes', 'totalBytesSent']),
-    0
-  );
+  const activePaths = pathItems.filter(isStreamOnline).length;
+  const totals = sumTransferRates(pathItems, rates);
+  const inboundBytesPerSecond = ratesStatus === 'fresh' ? totals.inbound.value : null;
+  const outboundBytesPerSecond = ratesStatus === 'fresh' ? totals.outbound.value : null;
+  const ingressPartial = ratesStatus === 'fresh' && totals.inbound.partial;
+  const egressPartial = ratesStatus === 'fresh' && totals.outbound.partial;
   const rtspViewers = isProtocolDisabled(globalConfig, 'rtsp')
     ? 0
     : countReaders(pathItems, ['rtspSession']);
@@ -95,8 +98,10 @@ export function calculateDashboardMetrics({
   return {
     uptime,
     activePaths,
-    bytesReceived,
-    bytesSent,
+    inboundBytesPerSecond,
+    outboundBytesPerSecond,
+    ingressPartial,
+    egressPartial,
     rtspViewers,
     rtspsViewers,
     rtmpViewers,
@@ -109,8 +114,10 @@ export function calculateDashboardMetrics({
       {
         uptime,
         activePaths,
-        bytesReceived,
-        bytesSent,
+        inboundBytesPerSecond,
+        outboundBytesPerSecond,
+        ingressPartial,
+        egressPartial,
         rtspViewers,
         rtspsViewers,
         rtmpViewers,
@@ -140,17 +147,17 @@ function buildDashboardMetricCards(
     {
       label: 'Active Streams',
       value: metrics.activePaths,
-      description: 'Configured streams',
+      description: 'Online streams',
     },
     {
-      label: 'Bytes Received',
-      value: formatBytes(metrics.bytesReceived),
-      description: 'Total ingress',
+      label: 'Ingress',
+      value: formatByteRate(metrics.inboundBytesPerSecond),
+      description: metrics.ingressPartial ? 'Partial · Waiting for samples' : 'Received by server',
     },
     {
-      label: 'Bytes Sent',
-      value: formatBytes(metrics.bytesSent),
-      description: 'Total egress',
+      label: 'Egress',
+      value: formatByteRate(metrics.outboundBytesPerSecond),
+      description: metrics.egressPartial ? 'Partial · Waiting for samples' : 'Sent by server',
     },
     {
       label: 'RTSP Readers',
@@ -193,14 +200,6 @@ function buildDashboardMetricCards(
       description: 'All displayed active readers',
     },
   ];
-}
-
-function getPathByteTotal(path: PathItem, fields: Array<keyof PathItem>): number {
-  for (const field of fields) {
-    const value = path[field];
-    if (typeof value === 'number' && Number.isFinite(value)) return Math.max(value, 0);
-  }
-  return 0;
 }
 
 function countReaders(paths: PathItem[], readerKinds: string[]): number {

@@ -22,7 +22,7 @@ import {
 } from '@fluentui/react-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@src/components/common/ThemeToggle';
-import { useMediaMTXConfig } from '@src/hooks/useMediaMTXConfig';
+import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
 import { DASHBOARD_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
@@ -37,8 +37,18 @@ type SidebarNavItem = {
 };
 
 const NAV_ITEMS: SidebarNavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', path: DASHBOARD_ROUTE, icon: <Home24Regular /> },
-  { id: 'streams', label: 'Streams', path: STREAMS_ROUTE, icon: <Video24Regular /> },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    path: DASHBOARD_ROUTE,
+    icon: <Home24Regular />,
+  },
+  {
+    id: 'streams',
+    label: 'Streams',
+    path: STREAMS_ROUTE,
+    icon: <Video24Regular />,
+  },
 ];
 
 const useStyles = makeStyles({
@@ -222,7 +232,7 @@ export default function AppSidebar() {
     setActiveTab(pathToTab(location.pathname));
   }, [location.pathname, setActiveTab]);
 
-  const { isError, isPending } = useMediaMTXConfig();
+  const { isError, isPending } = useStoreBackedServerInfo();
 
   const connectionStatus = getApiAvailabilityStatus({ isError, isPending });
 

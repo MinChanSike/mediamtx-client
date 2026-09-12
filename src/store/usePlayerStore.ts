@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { PathItem } from '@src/types/stream';
 
-export type StreamsView = 'table' | 'cards' | 'grid';
+export type StreamsView = 'table' | 'grid';
 export type GridLayout = '1x1' | '2x2' | '3x3' | '4x4';
 
 export interface PlayerState {
@@ -52,7 +52,7 @@ const safeLocalStorage: StateStorage = {
 };
 
 function isStreamsView(value: unknown): value is StreamsView {
-  return value === 'table' || value === 'cards' || value === 'grid';
+  return value === 'table' || value === 'grid';
 }
 
 function isGridLayout(value: unknown): value is GridLayout {

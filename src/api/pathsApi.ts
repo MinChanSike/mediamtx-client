@@ -12,8 +12,8 @@ interface RawPathItem {
   available?: boolean;
   ready?: boolean;
   tracks: Track[];
-  bytesReceived: number;
-  bytesSent: number;
+  bytesReceived?: number;
+  bytesSent?: number;
   inboundBytes?: number;
   outboundBytes?: number;
   totalBytesReceived?: number;
@@ -42,6 +42,22 @@ interface RawConfigPathList {
 
 const FALLBACK_CONFIG_PATH_NAME = '**all_others';
 
+async function getAllPages<T extends { items: unknown[]; pageCount: number; itemCount: number }>(
+  endpoint: string,
+  serverUrl?: string
+): Promise<T> {
+  const first = await apiFetch<T>(endpoint, undefined, serverUrl);
+  const items = [...first.items];
+  for (let page = 1; page < first.pageCount; page++) {
+    const next = await apiFetch<T>(`${endpoint}?page=${page}`, undefined, serverUrl);
+    if (next.pageCount !== first.pageCount || next.itemCount !== first.itemCount) {
+      throw new Error('Path list changed during pagination; waiting for the next refresh.');
+    }
+    items.push(...next.items);
+  }
+  return { ...first, items };
+}
+
 function mapRuntimePath(item: RawPathItem): PathItem {
   let sourceString: string | null = null;
   const sourceInfo = item.source && typeof item.source === 'object' ? item.source : null;
@@ -62,8 +78,8 @@ function mapRuntimePath(item: RawPathItem): PathItem {
 
 export async function getPathsList(serverUrl?: string): Promise<PathList> {
   const [runtimePaths, configPaths] = await Promise.all([
-    apiFetch<RawPathList>('/v3/paths/list', undefined, serverUrl),
-    apiFetch<RawConfigPathList>('/v3/config/paths/list', undefined, serverUrl),
+    getAllPages<RawPathList>('/v3/paths/list', serverUrl),
+    getAllPages<RawConfigPathList>('/v3/config/paths/list', serverUrl),
   ]);
 
   const configPathsByName = new Map(

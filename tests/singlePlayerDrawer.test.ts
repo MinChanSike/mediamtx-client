@@ -42,15 +42,21 @@ describe('Single Player drawer polish', () => {
   });
 
   test('builds compact stream metadata below the player from selected stream data', () => {
-    expect(getSinglePlayerMetrics(stream)).toEqual([
+    expect(
+      getSinglePlayerMetrics(stream, {
+        inboundBytesPerSecond: 1024,
+        outboundBytesPerSecond: 2048,
+      })
+    ).toEqual([
       { label: 'Protocol', value: 'RTSP' },
       { label: 'Track Count', value: '2' },
-      { label: 'Bytes In/Out', value: '1,024 / 2,048' },
+      { label: 'Ingress', value: '1.0 KiB/s' },
+      { label: 'Egress', value: '2.0 KiB/s' },
       { label: 'Total Readers', value: '2' },
     ]);
   });
 
-  test('falls byte metrics back to bytesReceived and bytesSent and handles empty readers', () => {
+  test('does not display cumulative bytes as rates and handles empty readers', () => {
     expect(
       getSinglePlayerMetrics({
         ...stream,
@@ -63,7 +69,8 @@ describe('Single Player drawer polish', () => {
     ).toEqual([
       { label: 'Protocol', value: 'HLS' },
       { label: 'Track Count', value: '0' },
-      { label: 'Bytes In/Out', value: '100 / 200' },
+      { label: 'Ingress', value: '\u2014' },
+      { label: 'Egress', value: '\u2014' },
       { label: 'Total Readers', value: '0' },
     ]);
   });

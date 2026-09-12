@@ -1,5 +1,16 @@
 import humanizeDuration from 'humanize-duration';
 
+export function formatByteRate(rate: number | null | undefined): string {
+  if (rate == null || !Number.isFinite(rate) || rate < 0) return '\u2014';
+  if (rate === 0) return '0 B/s';
+  const units = ['B/s', 'KiB/s', 'MiB/s', 'GiB/s', 'TiB/s'];
+  const index = Math.max(
+    0,
+    Math.min(units.length - 1, Math.floor(Math.log(rate) / Math.log(1024)))
+  );
+  return `${(rate / 1024 ** index).toFixed(1)} ${units[index]}`;
+}
+
 /** Format bytes to human-readable string (e.g. 1.2 MB) */
 export function formatBytes(bytes: number, decimals = 1): string {
   if (bytes === 0) return '0 B';

@@ -23,10 +23,6 @@ const streamsPageSource = readFileSync(
   new URL('../src/pages/StreamsPage.tsx', import.meta.url),
   'utf8'
 );
-const streamCardSource = readFileSync(
-  new URL('../src/components/streams/StreamCard.tsx', import.meta.url),
-  'utf8'
-);
 const streamTableSource = readFileSync(
   new URL('../src/components/streams/StreamTable.tsx', import.meta.url),
   'utf8'
@@ -225,9 +221,8 @@ describe('grid integration', () => {
     expect(usePlayerStore.getState().activeGridStreams.has(3)).toBe(false);
   });
 
-  test('table and card quick Add to Grid actions remain wired', () => {
-    expect(streamsPageSource.match(/onAddToGrid=\{handleAddToGrid\}/g)).toHaveLength(2);
-    expect(streamCardSource).toContain('onClick={() => onAddToGrid(stream)}');
+  test('table quick Add to Grid action remains wired', () => {
+    expect(streamsPageSource.match(/onAddToGrid=\{handleAddToGrid\}/g)).toHaveLength(1);
     expect(streamTableSource).toContain('onClick={() => onAddToGrid(stream)}');
   });
 

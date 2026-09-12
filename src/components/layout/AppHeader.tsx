@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input, Text } from '@fluentui/react-components';
 import { Checkmark24Regular, Dismiss24Regular, Edit24Regular } from '@fluentui/react-icons';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
-import { useMediaMTXConfig } from '@src/hooks/useMediaMTXConfig';
+import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
 import useAppStore from '@src/store/useAppStore';
 import StatusBadge from '@src/components/common/StatusBadge';
 import ThemeToggle from '@src/components/common/ThemeToggle';
@@ -20,7 +20,7 @@ export default function AppHeader() {
     setUrlInput(serverUrl);
   }, [serverUrl]);
 
-  const { isError, isPending } = useMediaMTXConfig();
+  const { isError, isPending } = useStoreBackedServerInfo();
 
   const status = getApiAvailabilityStatus({ isError, isPending });
 

@@ -22,13 +22,16 @@ import {
   EditRegular,
   InfoRegular,
   PlayRegular,
+  PlugDisconnected20Regular,
 } from '@fluentui/react-icons';
 import type { PathItem } from '@src/types/stream';
 import StatusBadge from '@src/components/common/StatusBadge';
-import { formatBytes, formatProtocol } from '@src/utils/formatters';
+import { formatByteRate, formatProtocol } from '@src/utils/formatters';
+import { useTransferRates } from '@src/hooks/useTransferRates';
+import { compareTransferRates } from '@src/utils/transferRates';
 import { isStreamOnline } from '@src/utils/streamStatus';
 import { shouldEnableTableScroll } from '@src/components/streams/streamTableLayout';
-import { getDisplayProtocol } from '@src/utils/streamDisplay';
+import { getDisplayProtocol, getSourceKickTarget } from '@src/utils/streamDisplay';
 
 interface StreamTableProps {
   streams: PathItem[];
@@ -37,6 +40,7 @@ interface StreamTableProps {
   onAddToGrid: (stream: PathItem) => void;
   onEdit: (stream: PathItem) => void;
   onDelete: (stream: PathItem) => void;
+  onKickSource: (stream: PathItem) => void;
 }
 
 type SortColumn = 'name' | 'protocol' | 'tracks' | 'readers' | 'bytesIn' | 'bytesOut' | 'status';
@@ -47,8 +51,8 @@ const SORTABLE_COLUMNS: Array<{ key: SortColumn; label: string }> = [
   { key: 'protocol', label: 'Protocol' },
   { key: 'tracks', label: 'Tracks' },
   { key: 'readers', label: 'Readers' },
-  { key: 'bytesIn', label: 'Bytes In' },
-  { key: 'bytesOut', label: 'Bytes Out' },
+  { key: 'bytesIn', label: 'Ingress' },
+  { key: 'bytesOut', label: 'Egress' },
   { key: 'status', label: 'Status' },
 ];
 
@@ -110,12 +114,12 @@ const useStyles = makeStyles({
   },
   actionsCellHeader: {
     width: 'auto',
-    minWidth: '180px',
+    minWidth: '216px',
     '> div': { width: 'auto', justifySelf: 'center' },
   },
   actionsCell: {
     width: 'auto',
-    minWidth: '180px',
+    minWidth: '216px',
   },
 });
 
@@ -129,10 +133,6 @@ function compareStreams(a: PathItem, b: PathItem, column: SortColumn) {
       return a.tracks.length - b.tracks.length;
     case 'readers':
       return a.readers.length - b.readers.length;
-    case 'bytesIn':
-      return a.bytesReceived - b.bytesReceived;
-    case 'bytesOut':
-      return a.bytesSent - b.bytesSent;
     case 'status':
       return Number(isStreamOnline(a)) - Number(isStreamOnline(b));
     default:
@@ -147,8 +147,10 @@ export default function StreamTable({
   onAddToGrid,
   onEdit,
   onDelete,
+  onKickSource,
 }: StreamTableProps) {
   const styles = useStyles();
+  const rates = useTransferRates();
   const tableWrapRef = useRef<ElementRef<'div'>>(null);
   const tableRef = useRef<ElementRef<'table'>>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>('name');
@@ -161,6 +163,17 @@ export default function StreamTable({
     return streams
       .map((stream, index) => ({ stream, index }))
       .sort((a, b) => {
+        if (sortColumn === 'bytesIn' || sortColumn === 'bytesOut') {
+          const field =
+            sortColumn === 'bytesIn' ? 'inboundBytesPerSecond' : 'outboundBytesPerSecond';
+          return (
+            compareTransferRates(
+              rates[a.stream.name]?.[field] ?? null,
+              rates[b.stream.name]?.[field] ?? null,
+              sortDirection === 'descending'
+            ) || a.stream.name.localeCompare(b.stream.name)
+          );
+        }
         const result = compareStreams(a.stream, b.stream, sortColumn);
         if (result !== 0) return result * directionMultiplier;
 
@@ -170,7 +183,7 @@ export default function StreamTable({
         return a.index - b.index;
       })
       .map(({ stream }) => stream);
-  }, [sortColumn, sortDirection, streams]);
+  }, [sortColumn, sortDirection, streams, rates]);
 
   const handleSort = (column: SortColumn) => {
     if (column === sortColumn) {
@@ -252,6 +265,7 @@ export default function StreamTable({
             sortedStreams.map((stream) => {
               const protocol = getDisplayProtocol(stream);
               const isOnline = isStreamOnline(stream);
+              const sourceKickTarget = getSourceKickTarget(stream);
 
               return (
                 <TableRow key={stream.name}>
@@ -269,12 +283,12 @@ export default function StreamTable({
                   <TableCell className={styles.dataCell}>{stream.readers.length}</TableCell>
                   <TableCell className={styles.dataCell}>
                     <Text font="monospace" size={200} truncate className={styles.clippedText}>
-                      {formatBytes(stream.bytesReceived)}
+                      {formatByteRate(rates[stream.name]?.inboundBytesPerSecond)}
                     </Text>
                   </TableCell>
                   <TableCell className={styles.dataCell}>
                     <Text font="monospace" size={200} truncate className={styles.clippedText}>
-                      {formatBytes(stream.bytesSent)}
+                      {formatByteRate(rates[stream.name]?.outboundBytesPerSecond)}
                     </Text>
                   </TableCell>
                   <TableCell className={styles.dataCell}>
@@ -304,6 +318,15 @@ export default function StreamTable({
                         title="View details"
                         onClick={() => onDetails(stream)}
                       />
+                      {sourceKickTarget && (
+                        <Button
+                          size="small"
+                          icon={<PlugDisconnected20Regular style={smallIconStyle} />}
+                          aria-label={`Kick source for ${stream.name}`}
+                          title="Kick source"
+                          onClick={() => onKickSource(stream)}
+                        />
+                      )}
                       {stream.isConfigured && (
                         <Button
                           size="small"

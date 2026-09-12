@@ -21,8 +21,8 @@ import type { AddStreamInput } from '@src/hooks/useAddStream';
 import type { PathList } from '@src/schemas/pathSchema';
 import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
 import type { KickTarget, ViewerDetailTarget } from '@src/utils/streamDisplay';
+import { LIVE_REFRESH_MS } from '@src/utils/transferRates';
 
-const LIVE_REFRESH_MS = 3000;
 const SWR_CACHE_PREFIX = 'mediamtx-api';
 
 type ResourceResult<T> = {
@@ -49,20 +49,15 @@ type StoreMutationResult<TVariables> = ApiMutationState & {
 };
 
 type SwrResource =
-  | 'paths'
-  | 'serverInfo'
-  | 'globalConfig'
-  | 'rawConfig'
-  | 'pathDetail'
-  | 'viewerDetail';
+  'paths' | 'serverInfo' | 'globalConfig' | 'rawConfig' | 'pathDetail' | 'viewerDetail';
 
 type MediaMTXSWRKey = readonly [typeof SWR_CACHE_PREFIX, SwrResource, string, string?];
 
 const swrOptions = {
-  revalidateOnFocus: false,
-  revalidateOnReconnect: false,
-  refreshWhenHidden: true,
-  refreshWhenOffline: true,
+  revalidateOnFocus: true,
+  revalidateOnReconnect: true,
+  refreshWhenHidden: false,
+  refreshWhenOffline: false,
   shouldRetryOnError: false,
 };
 
@@ -141,14 +136,18 @@ async function loadPaths(serverUrl: string) {
   if (!beginIfCurrent(serverUrl, () => useMediaMTXApiStore.getState().beginPathsLoad())) {
     return makeToken();
   }
+  const serverGeneration = useMediaMTXApiStore.getState().serverGeneration;
+  const canCommitPaths = () =>
+    canCommitGeneration(serverUrl, generationKey, generation) &&
+    useMediaMTXApiStore.getState().serverGeneration === serverGeneration;
 
   try {
     const data = await getPathsList(serverUrl);
-    if (canCommitGeneration(serverUrl, generationKey, generation)) {
+    if (canCommitPaths()) {
       useMediaMTXApiStore.getState().setPathsSuccess(data);
     }
   } catch (error) {
-    if (canCommitGeneration(serverUrl, generationKey, generation)) {
+    if (canCommitPaths()) {
       useMediaMTXApiStore.getState().setPathsError(toError(error));
     }
   }
@@ -416,7 +415,8 @@ export function useStoreBackedGlobalConfig(enabled = true): ResourceResult<Globa
 
   useSWR(enabled ? globalConfigKey(serverUrl) : null, () => loadGlobalConfig(serverUrl), {
     ...swrOptions,
-    refreshInterval: LIVE_REFRESH_MS,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   });
 
   return makeResourceResult(resource, enabled, refreshGlobalConfigNow);

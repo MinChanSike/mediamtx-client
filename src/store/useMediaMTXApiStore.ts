@@ -1,4 +1,10 @@
 import { create } from 'zustand';
+import {
+  RATE_STALE_MS,
+  sampleTransferRates,
+  type TransferRate,
+  type TransferSample,
+} from '@src/utils/transferRates';
 import type { ServerInfo } from '@src/api/serverInfoApi';
 import type { PathList } from '@src/schemas/pathSchema';
 import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
@@ -21,6 +27,11 @@ export interface ApiMutationState {
 }
 
 interface MediaMTXApiState {
+  serverGeneration: number;
+  transferRates: Record<string, TransferRate>;
+  transferSamples: Record<string, TransferSample>;
+  ratesStatus: 'unavailable' | 'fresh' | 'stale';
+  expireRates: () => void;
   serverUrl: string;
   paths: ApiResourceState<PathList>;
   serverInfo: ApiResourceState<ServerInfo>;
@@ -31,7 +42,7 @@ interface MediaMTXApiState {
   mutations: Record<ApiMutationKey, ApiMutationState>;
   resetForServerUrl: (serverUrl: string) => void;
   beginPathsLoad: () => void;
-  setPathsSuccess: (data: PathList) => void;
+  setPathsSuccess: (data: PathList, sampledAt?: number) => void;
   setPathsError: (error: Error) => void;
   beginServerInfoLoad: () => void;
   setServerInfoSuccess: (data: ServerInfo) => void;
@@ -118,7 +129,17 @@ function initialMutations(): Record<ApiMutationKey, ApiMutationState> {
   };
 }
 
-const useMediaMTXApiStore = create<MediaMTXApiState>((set) => ({
+let rateExpiryTimer: ReturnType<typeof setTimeout> | undefined;
+
+const useMediaMTXApiStore = create<MediaMTXApiState>((set, get) => ({
+  serverGeneration: 0,
+  transferRates: {},
+  transferSamples: {},
+  ratesStatus: 'unavailable',
+  expireRates: () => {
+    clearTimeout(rateExpiryTimer);
+    set({ transferRates: {}, transferSamples: {}, ratesStatus: 'stale' });
+  },
   serverUrl: '',
   paths: emptyResource<PathList>(),
   serverInfo: emptyResource<ServerInfo>(),
@@ -130,9 +151,14 @@ const useMediaMTXApiStore = create<MediaMTXApiState>((set) => ({
   resetForServerUrl: (serverUrl) =>
     set((state) => {
       if (state.serverUrl === serverUrl) return state;
+      clearTimeout(rateExpiryTimer);
 
       return {
         serverUrl,
+        serverGeneration: state.serverGeneration + 1,
+        transferRates: {},
+        transferSamples: {},
+        ratesStatus: 'unavailable',
         paths: emptyResource<PathList>(),
         serverInfo: emptyResource<ServerInfo>(),
         globalConfig: emptyResource<GlobalConfig>(),
@@ -142,20 +168,40 @@ const useMediaMTXApiStore = create<MediaMTXApiState>((set) => ({
         mutations: initialMutations(),
       };
     }),
-  beginPathsLoad: () =>
-    set((state) => ({ paths: beginResourceLoadPreservingError(state.paths) })),
-  setPathsSuccess: (data) => set({ paths: resourceSuccess(data) }),
-  setPathsError: (error) => set((state) => ({ paths: resourceError(state.paths, error) })),
-  beginServerInfoLoad: () =>
-    set((state) => ({ serverInfo: beginResourceLoad(state.serverInfo) })),
+  beginPathsLoad: () => set((state) => ({ paths: beginResourceLoadPreservingError(state.paths) })),
+  setPathsSuccess: (data, sampledAt = globalThis.performance.now()) => {
+    clearTimeout(rateExpiryTimer);
+    const { samples, rates } = sampleTransferRates(data.items, get().transferSamples, sampledAt);
+    set({
+      paths: resourceSuccess(data),
+      transferSamples: samples,
+      transferRates: rates,
+      ratesStatus: 'fresh',
+    });
+    rateExpiryTimer = setTimeout(() => get().expireRates(), RATE_STALE_MS + 1);
+  },
+  setPathsError: (error) => {
+    clearTimeout(rateExpiryTimer);
+    set((state) => ({
+      paths: resourceError(state.paths, error),
+      transferSamples: {},
+      transferRates: {},
+      ratesStatus: 'unavailable',
+    }));
+  },
+  beginServerInfoLoad: () => set((state) => ({ serverInfo: beginResourceLoad(state.serverInfo) })),
   setServerInfoSuccess: (data) => set({ serverInfo: resourceSuccess(data) }),
   setServerInfoError: (error) =>
     set((state) => ({ serverInfo: resourceError(state.serverInfo, error) })),
   beginGlobalConfigLoad: () =>
-    set((state) => ({ globalConfig: beginResourceLoadPreservingError(state.globalConfig) })),
+    set((state) => ({
+      globalConfig: beginResourceLoadPreservingError(state.globalConfig),
+    })),
   setGlobalConfigSuccess: (data) => set({ globalConfig: resourceSuccess(data) }),
   setGlobalConfigError: (error) =>
-    set((state) => ({ globalConfig: resourceError(state.globalConfig, error) })),
+    set((state) => ({
+      globalConfig: resourceError(state.globalConfig, error),
+    })),
   beginRawConfigLoad: () => set((state) => ({ rawConfig: beginResourceLoad(state.rawConfig) })),
   setRawConfigSuccess: (data) => set({ rawConfig: resourceSuccess(data) }),
   setRawConfigError: (error) =>

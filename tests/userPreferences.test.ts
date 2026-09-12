@@ -193,7 +193,7 @@ describe('application preferences', () => {
 
 describe('Streams player preferences', () => {
   test('round-trips every view and grid layout independently', () => {
-    const views = ['table', 'cards', 'grid'] as const;
+    const views = ['table', 'grid'] as const;
     const layouts = ['1x1', '2x2', '3x3', '4x4'] as const;
 
     for (const view of views) {
@@ -208,13 +208,13 @@ describe('Streams player preferences', () => {
       }
     }
 
-    usePlayerStore.getState().setStreamsView('cards');
+    usePlayerStore.getState().setStreamsView('grid');
     usePlayerStore.getState().setGridLayout('4x4');
     usePlayerStore.getState().setStreamsView('table');
     expect(usePlayerStore.getState().gridLayout).toBe('4x4');
 
     const saved = storage.getItem(PLAYER_PREFERENCES_STORAGE_KEY);
-    usePlayerStore.setState({ streamsView: 'cards', gridLayout: '1x1' });
+    usePlayerStore.setState({ streamsView: 'grid', gridLayout: '1x1' });
     storage.setItem(PLAYER_PREFERENCES_STORAGE_KEY, saved as string);
     usePlayerStore.persist.rehydrate();
     expect(usePlayerStore.getState()).toMatchObject({
@@ -337,7 +337,7 @@ describe('storage failure boundaries and UI integration', () => {
 
     expect(() => useAppStore.getState().setTheme('light')).not.toThrow();
     expect(() => useAppStore.getState().setServerUrl('http://memory-only.test')).not.toThrow();
-    expect(() => usePlayerStore.getState().setStreamsView('cards')).not.toThrow();
+    expect(() => usePlayerStore.getState().setStreamsView('grid')).not.toThrow();
     expect(() => usePlayerStore.getState().setGridLayout('3x3')).not.toThrow();
     expect(() => usePlayerStore.getState().setGridStream(1, 'memory/stream')).not.toThrow();
     expect(() => usePlayerStore.getState().clearGridStream(1)).not.toThrow();
@@ -353,6 +353,21 @@ describe('storage failure boundaries and UI integration', () => {
     expect(source).toContain('const setLayout = usePlayerStore((s) => s.setStreamsView)');
     expect(source).not.toContain("useState<LayoutMode>('table')");
     expect(source).not.toContain("setGridLayout('single')");
-    expect(source.match(/onAddToGrid=\{handleAddToGrid\}/g)).toHaveLength(2);
+    expect(source.match(/onAddToGrid=\{handleAddToGrid\}/g)).toHaveLength(1);
+  });
+
+  test('restores removed card view preferences to the table layout', () => {
+    setPersisted(PLAYER_PREFERENCES_STORAGE_KEY, {
+      streamsView: 'cards',
+      gridLayout: '4x4',
+      activeGridStreams: [],
+    });
+
+    usePlayerStore.persist.rehydrate();
+
+    expect(usePlayerStore.getState()).toMatchObject({
+      streamsView: 'table',
+      gridLayout: '4x4',
+    });
   });
 });
