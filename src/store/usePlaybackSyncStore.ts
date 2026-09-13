@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import { getDayRangeMs, todayDayKey } from '@src/utils/playbackTime';
+import { getDayRangeMs, todayDayKey } from '@src/utils/playbackSyncTime';
 
 export type PlaybackLayout = '1x2' | '2x2';
 export type PlaybackRate = 0.5 | 1 | 2 | 4;
@@ -39,7 +39,7 @@ interface PlaybackPreferences {
   endpointOverrides: Record<string, string>;
 }
 
-export const PLAYBACK_PREFERENCES_STORAGE_KEY = 'mediamtx-playback-preferences';
+export const PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY = 'mediamtx-playback-preferences';
 
 const safeLocalStorage: StateStorage = {
   getItem: (name) => {
@@ -186,7 +186,7 @@ export function createPlaybackStore(storage: StateStorage = safeLocalStorage, no
         setAudioSlot: (audioSlot) => set({ audioSlot }),
       }),
       {
-        name: PLAYBACK_PREFERENCES_STORAGE_KEY,
+        name: PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY,
         storage: createJSONStorage<PlaybackPreferences>(() => storage),
         partialize: (state) => ({
           layout: state.layout,
@@ -199,6 +199,6 @@ export function createPlaybackStore(storage: StateStorage = safeLocalStorage, no
   );
 }
 
-const usePlaybackStore = createPlaybackStore();
+const usePlaybackSyncStore = createPlaybackStore();
 
-export default usePlaybackStore;
+export default usePlaybackSyncStore;

@@ -5,7 +5,7 @@ import type { Recording } from '@src/schemas/recordingSchema';
 
 const RECORDINGS_CACHE_PREFIX = 'mediamtx-playback-recordings';
 
-export interface PlaybackCatalogResult {
+export interface PlaybackSyncCatalogResult {
   recordings: Recording[];
   isLoading: boolean;
   isError: boolean;
@@ -18,7 +18,7 @@ export interface PlaybackCatalogResult {
  * (mount) and the page offers an explicit refresh; offline recorded streams
  * are included because they come from `/v3/recordings/list`, not `/v3/paths`.
  */
-export function usePlaybackCatalog(): PlaybackCatalogResult {
+export function usePlaybackSyncCatalog(): PlaybackSyncCatalogResult {
   const serverUrl = useAppStore((s) => s.serverUrl);
 
   const { data, error, isLoading, mutate } = useSWR(

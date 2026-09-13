@@ -9,7 +9,7 @@ import {
   toDayKey,
   toRfc3339,
   todayDayKey,
-} from '../src/utils/playbackTime';
+} from '../src/utils/playbackSyncTime';
 
 const HOUR = 60 * 60 * 1000;
 

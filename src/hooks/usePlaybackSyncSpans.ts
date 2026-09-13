@@ -1,16 +1,16 @@
 import { useRef } from 'react';
 import useSWR from 'swr';
-import { fetchPlaybackSpans } from '@src/api/playbackApi';
-import type { NormalizedSpan } from '@src/utils/playbackIntervals';
-import { normalizeSpans } from '@src/utils/playbackIntervals';
-import { getDayRangeMs, todayDayKey } from '@src/utils/playbackTime';
+import { fetchPlaybackSpans } from '@src/api/playbackSyncApi';
+import type { NormalizedSpan } from '@src/utils/playbackSyncIntervals';
+import { normalizeSpans } from '@src/utils/playbackSyncIntervals';
+import { getDayRangeMs, todayDayKey } from '@src/utils/playbackSyncTime';
 
 const SPANS_CACHE_PREFIX = 'mediamtx-playback-spans';
 
 /** Interval availability refresh cadence for the current day, per the plan. */
 export const TODAY_SPANS_REFRESH_MS = 30_000;
 
-export interface PlaybackSpanIdentity {
+export interface PlaybackSyncSpanIdentity {
   endpoint: string;
   path: string;
   day: string;
@@ -23,8 +23,8 @@ export type SpansKey = readonly [string, string, string, string];
  * endpoint, path, or selected day changed while the request was in flight.
  */
 export function isSameSpanIdentity(
-  captured: PlaybackSpanIdentity,
-  current: PlaybackSpanIdentity
+  captured: PlaybackSyncSpanIdentity,
+  current: PlaybackSyncSpanIdentity
 ): boolean {
   return (
     captured.endpoint === current.endpoint &&
@@ -33,7 +33,7 @@ export function isSameSpanIdentity(
   );
 }
 
-export function buildSpansKey(prefix: string, identity: PlaybackSpanIdentity): SpansKey {
+export function buildSpansKey(prefix: string, identity: PlaybackSyncSpanIdentity): SpansKey {
   return [prefix, identity.endpoint, identity.path, identity.day];
 }
 
@@ -56,12 +56,12 @@ export function useSlotSpans(
   dayKey: string,
   endpoint: string | null
 ): SlotSpansResult {
-  const identity: PlaybackSpanIdentity | null =
+  const identity: PlaybackSyncSpanIdentity | null =
     path && endpoint ? { endpoint, path, day: dayKey } : null;
 
   // The fetcher reads the latest identity when a response arrives, so a
   // response for a superseded server/endpoint/path/day never surfaces.
-  const identityRef = useRef<PlaybackSpanIdentity | null>(identity);
+  const identityRef = useRef<PlaybackSyncSpanIdentity | null>(identity);
   identityRef.current = identity;
 
   const key = identity ? buildSpansKey(SPANS_CACHE_PREFIX, identity) : null;

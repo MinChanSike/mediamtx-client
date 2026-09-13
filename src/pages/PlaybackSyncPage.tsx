@@ -6,19 +6,19 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import PlaybackControls from '@src/components/playback/PlaybackControls';
-import PlaybackGrid from '@src/components/playback/PlaybackGrid';
-import PlaybackRecordingSidebar from '@src/components/playback/PlaybackRecordingSidebar';
-import PlaybackTimeline, { type TimelineLane } from '@src/components/playback/PlaybackTimeline';
-import { usePlaybackCatalog } from '@src/hooks/usePlaybackCatalog';
-import { usePlaybackEndpoint } from '@src/hooks/usePlaybackEndpoint';
-import { useSlotSpans } from '@src/hooks/usePlaybackSpans';
-import { useRecordedPlayback } from '@src/hooks/useRecordedPlayback';
-import usePlaybackStore, {
+import PlaybackSyncControls from '@src/components/playbackSync/PlaybackSyncControls';
+import PlaybackSyncGrid from '@src/components/playbackSync/PlaybackSyncGrid';
+import PlaybackSyncRecordingSidebar from '@src/components/playbackSync/PlaybackSyncRecordingSidebar';
+import PlaybackSyncTimeline, { type TimelineLane } from '@src/components/playbackSync/PlaybackSyncTimeline';
+import { usePlaybackSyncCatalog } from '@src/hooks/usePlaybackSyncCatalog';
+import { usePlaybackSyncEndpoint } from '@src/hooks/usePlaybackSyncEndpoint';
+import { useSlotSpans } from '@src/hooks/usePlaybackSyncSpans';
+import { useRecordedPlaybackSync } from '@src/hooks/useRecordedPlaybackSync';
+import usePlaybackSyncStore, {
   PLAYBACK_SLOT_COUNT,
-} from '@src/store/usePlaybackStore';
-import type { NormalizedSpan } from '@src/utils/playbackIntervals';
-import { shiftDayKey } from '@src/utils/playbackTime';
+} from '@src/store/usePlaybackSyncStore';
+import type { NormalizedSpan } from '@src/utils/playbackSyncIntervals';
+import { shiftDayKey } from '@src/utils/playbackSyncTime';
 
 const useStyles = makeStyles({
   root: {
@@ -79,17 +79,17 @@ export function getVisibleSlotPaths(
   return slotPaths.map((path, slot) => (slot < visibleSlotCount ? path : null));
 }
 
-export default function PlaybackPage() {
+export default function PlaybackSyncPage() {
   const styles = useStyles();
-  const catalog = usePlaybackCatalog();
-  const endpoint = usePlaybackEndpoint();
+  const catalog = usePlaybackSyncCatalog();
+  const endpoint = usePlaybackSyncEndpoint();
 
-  const layout = usePlaybackStore((s) => s.layout);
-  const slots = usePlaybackStore((s) => s.slots);
-  const setSlot = usePlaybackStore((s) => s.setSlot);
-  const selectedDay = usePlaybackStore((s) => s.selectedDay);
-  const setSelectedDay = usePlaybackStore((s) => s.setSelectedDay);
-  const sharedTimestampMs = usePlaybackStore((s) => s.sharedTimestampMs);
+  const layout = usePlaybackSyncStore((s) => s.layout);
+  const slots = usePlaybackSyncStore((s) => s.slots);
+  const setSlot = usePlaybackSyncStore((s) => s.setSlot);
+  const selectedDay = usePlaybackSyncStore((s) => s.selectedDay);
+  const setSelectedDay = usePlaybackSyncStore((s) => s.setSelectedDay);
+  const sharedTimestampMs = usePlaybackSyncStore((s) => s.sharedTimestampMs);
 
   const visibleSlotCount = layout === '1x2' ? 2 : PLAYBACK_SLOT_COUNT;
 
@@ -118,7 +118,7 @@ export default function PlaybackPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleSlotPaths, visibleSlotCount, slot0.spans, slot1.spans, slot2.spans, slot3.spans]);
 
-  const { controller, snapshot } = useRecordedPlayback(spansByPath, endpoint.baseUrl);
+  const { controller, snapshot } = useRecordedPlaybackSync(spansByPath, endpoint.baseUrl);
 
   const assignedPaths = useMemo(
     () => new Set(Array.from(slots.values())),
@@ -154,12 +154,12 @@ export default function PlaybackPage() {
     <div className={styles.root}>
       <div className={styles.topBar}>
         <Title2 as="h1" className={styles.pageTitle}>
-          Playback
+          Playback Sync
         </Title2>
       </div>
 
       <div className={styles.workspace}>
-        <PlaybackRecordingSidebar
+        <PlaybackSyncRecordingSidebar
           recordings={catalog.recordings}
           assignedPaths={assignedPaths}
           selectedDay={selectedDay}
@@ -172,7 +172,7 @@ export default function PlaybackPage() {
         />
 
         <div className={styles.gridArea}>
-          <PlaybackGrid
+          <PlaybackSyncGrid
             controller={controller}
             tileSnapshots={snapshot.tiles}
             slotSpansStatus={slotSpansResults}
@@ -180,13 +180,13 @@ export default function PlaybackPage() {
         </div>
       </div>
 
-      <PlaybackTimeline
+      <PlaybackSyncTimeline
         lanes={lanes}
         dayKey={selectedDay}
         positionMs={sharedTimestampMs}
         onSeek={(epochMs) => controller.seekTo(epochMs)}
       />
-      <PlaybackControls controller={controller} />
+      <PlaybackSyncControls controller={controller} />
 
       <div className={styles.noticeStack}>
         {endpoint.status === 'disabled' && (

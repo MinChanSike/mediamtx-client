@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  RecordedPlaybackController,
+  RecordedPlaybackSyncController,
   MAX_MEDIA_REQUEST_SECONDS,
-} from '../src/playback/recordedPlaybackController';
-import { SharedClock } from '../src/playback/sharedClock';
-import { normalizeSpans } from '../src/utils/playbackIntervals';
+} from '../src/playbackSync/recordedPlaybackSyncController';
+import { SharedClock } from '../src/playbackSync/sharedClock';
+import { normalizeSpans } from '../src/utils/playbackSyncIntervals';
 import type { PlaybackSpan } from '../src/schemas/recordingSchema';
 
 const T0 = Date.UTC(2026, 0, 2, 0, 0, 0);
@@ -126,10 +126,10 @@ describe('SharedClock', () => {
   });
 });
 
-describe('RecordedPlaybackController tiles', () => {
+describe('RecordedPlaybackSyncController tiles', () => {
   function createController() {
     let mono = 0;
-    const controller = new RecordedPlaybackController({
+    const controller = new RecordedPlaybackSyncController({
       initialPositionMs: T0 + HOUR * 9,
       nowFn: () => mono,
     });
@@ -185,7 +185,7 @@ describe('RecordedPlaybackController tiles', () => {
     controller.seekTo(T0 + HOUR * 12);
     expect(controller.getSnapshot().tiles['1']).toMatchObject({ status: 'gap' });
 
-    const controller2 = new RecordedPlaybackController({ initialPositionMs: T0 });
+    const controller2 = new RecordedPlaybackSyncController({ initialPositionMs: T0 });
     const videoNoEndpoint = fakeVideo();
     controller2.attachVideo(0, 'cam-a', videoNoEndpoint);
     controller2.setEndpoint(null);
@@ -328,10 +328,10 @@ describe('RecordedPlaybackController tiles', () => {
   });
 });
 
-describe('RecordedPlaybackController synchronization', () => {
+describe('RecordedPlaybackSyncController synchronization', () => {
   function setup(monotonicMs = 0) {
     let mono = monotonicMs;
-    const controller = new RecordedPlaybackController({
+    const controller = new RecordedPlaybackSyncController({
       initialPositionMs: T0,
       nowFn: () => mono,
     });

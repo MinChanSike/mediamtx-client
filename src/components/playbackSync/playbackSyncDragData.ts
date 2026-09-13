@@ -1,35 +1,35 @@
-export const PLAYBACK_ASSIGNMENT_DRAG_TYPE = 'playback-assignment';
+export const PLAYBACK_SYNC_ASSIGNMENT_DRAG_TYPE = 'playback-sync-assignment';
 
-export interface PlaybackAssignmentDragData extends Record<string, unknown> {
-  type: typeof PLAYBACK_ASSIGNMENT_DRAG_TYPE;
+export interface PlaybackSyncAssignmentDragData extends Record<string, unknown> {
+  type: typeof PLAYBACK_SYNC_ASSIGNMENT_DRAG_TYPE;
   recordingName: string;
 }
 
-export function createPlaybackAssignmentDragData(
+export function createPlaybackSyncAssignmentDragData(
   recordingName: string
-): PlaybackAssignmentDragData {
+): PlaybackSyncAssignmentDragData {
   return {
-    type: PLAYBACK_ASSIGNMENT_DRAG_TYPE,
+    type: PLAYBACK_SYNC_ASSIGNMENT_DRAG_TYPE,
     recordingName,
   };
 }
 
-export function isPlaybackAssignmentDragData(
+export function isPlaybackSyncAssignmentDragData(
   data: Record<string, unknown>
-): data is PlaybackAssignmentDragData {
+): data is PlaybackSyncAssignmentDragData {
   return (
-    data.type === PLAYBACK_ASSIGNMENT_DRAG_TYPE &&
+    data.type === PLAYBACK_SYNC_ASSIGNMENT_DRAG_TYPE &&
     typeof data.recordingName === 'string' &&
     data.recordingName.trim().length > 0
   );
 }
 
-export function assignDroppedRecording(
+export function assignDroppedSyncRecording(
   data: Record<string, unknown>,
   slot: number,
   setSlot: (slot: number, path: string | null) => void
 ): boolean {
-  if (!isPlaybackAssignmentDragData(data)) return false;
+  if (!isPlaybackSyncAssignmentDragData(data)) return false;
 
   setSlot(slot, data.recordingName);
   return true;

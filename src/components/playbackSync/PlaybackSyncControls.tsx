@@ -13,19 +13,19 @@ import {
   Pause24Regular,
   Play24Regular,
 } from '@fluentui/react-icons';
-import type { RecordedPlaybackController } from '@src/playback/recordedPlaybackController';
-import usePlaybackStore, {
+import type { RecordedPlaybackSyncController } from '@src/playbackSync/recordedPlaybackSyncController';
+import usePlaybackSyncStore, {
   PLAYBACK_RATES,
   type PlaybackRate,
-} from '@src/store/usePlaybackStore';
+} from '@src/store/usePlaybackSyncStore';
 import {
   formatLocalTimeOfDay,
   getDayRangeMs,
   parseLocalTimeOfDay,
-} from '@src/utils/playbackTime';
+} from '@src/utils/playbackSyncTime';
 
 interface PlaybackControlsProps {
-  controller: RecordedPlaybackController;
+  controller: RecordedPlaybackSyncController;
 }
 
 const useStyles = makeStyles({
@@ -116,15 +116,15 @@ function formatRateLabel(rate: PlaybackRate): string {
  * (0.5x/1x/2x/4x) and direct timestamp entry, all acting on the shared
  * clock so every tile stays aligned.
  */
-export default function PlaybackControls({ controller }: PlaybackControlsProps) {
+export default function PlaybackSyncControls({ controller }: PlaybackControlsProps) {
   const styles = useStyles();
 
-  const isPlaying = usePlaybackStore((s) => s.isPlaying);
-  const setIsPlaying = usePlaybackStore((s) => s.setIsPlaying);
-  const rate = usePlaybackStore((s) => s.rate);
-  const setRate = usePlaybackStore((s) => s.setRate);
-  const sharedTimestampMs = usePlaybackStore((s) => s.sharedTimestampMs);
-  const selectedDay = usePlaybackStore((s) => s.selectedDay);
+  const isPlaying = usePlaybackSyncStore((s) => s.isPlaying);
+  const setIsPlaying = usePlaybackSyncStore((s) => s.setIsPlaying);
+  const rate = usePlaybackSyncStore((s) => s.rate);
+  const setRate = usePlaybackSyncStore((s) => s.setRate);
+  const sharedTimestampMs = usePlaybackSyncStore((s) => s.sharedTimestampMs);
+  const selectedDay = usePlaybackSyncStore((s) => s.selectedDay);
 
   const [timestampDraft, setTimestampDraft] = useState<string | null>(null);
   const displayTime = formatLocalTimeOfDay(sharedTimestampMs);

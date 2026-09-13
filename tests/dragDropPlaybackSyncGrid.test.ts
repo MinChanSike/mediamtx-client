@@ -4,41 +4,41 @@ import {
   draggable,
   dropTargetForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { registerRecordingDraggable } from '../src/components/playback/PlaybackRecordingSidebar';
-import { registerPlaybackDropTarget } from '../src/components/playback/PlaybackTile';
+import { registerRecordingDraggable } from '../src/components/playbackSync/PlaybackSyncRecordingSidebar';
+import { registerPlaybackSyncDropTarget } from '../src/components/playbackSync/PlaybackSyncTile';
 import {
-  assignDroppedRecording,
-  createPlaybackAssignmentDragData,
-  isPlaybackAssignmentDragData,
-} from '../src/components/playback/playbackDragData';
-import usePlaybackStore from '../src/store/usePlaybackStore';
+  assignDroppedSyncRecording,
+  createPlaybackSyncAssignmentDragData,
+  isPlaybackSyncAssignmentDragData,
+} from '../src/components/playbackSync/playbackSyncDragData';
+import usePlaybackSyncStore from '../src/store/usePlaybackSyncStore';
 
 const sidebarSource = readFileSync(
-  new URL('../src/components/playback/PlaybackRecordingSidebar.tsx', import.meta.url),
+  new URL('../src/components/playbackSync/PlaybackSyncRecordingSidebar.tsx', import.meta.url),
   'utf8'
 );
 const tileSource = readFileSync(
-  new URL('../src/components/playback/PlaybackTile.tsx', import.meta.url),
+  new URL('../src/components/playbackSync/PlaybackSyncTile.tsx', import.meta.url),
   'utf8'
 );
 
 describe('playback assignment drag data', () => {
   test('identifies valid internal data and preserves exact nested recording names', () => {
-    const data = createPlaybackAssignmentDragData('building/floor/camera');
+    const data = createPlaybackSyncAssignmentDragData('building/floor/camera');
 
     expect(data).toEqual({
-      type: 'playback-assignment',
+      type: 'playback-sync-assignment',
       recordingName: 'building/floor/camera',
     });
-    expect(isPlaybackAssignmentDragData(data)).toBe(true);
+    expect(isPlaybackSyncAssignmentDragData(data)).toBe(true);
   });
 
   test('rejects empty, whitespace-only, malformed, and unrelated data', () => {
-    expect(isPlaybackAssignmentDragData(createPlaybackAssignmentDragData(''))).toBe(false);
-    expect(isPlaybackAssignmentDragData(createPlaybackAssignmentDragData('   '))).toBe(false);
-    expect(isPlaybackAssignmentDragData({ type: 'playback-assignment' })).toBe(false);
-    expect(isPlaybackAssignmentDragData({ type: 'file', recordingName: 'camera' })).toBe(false);
-    expect(isPlaybackAssignmentDragData({ type: 'stream-assignment', streamName: 'camera' })).toBe(
+    expect(isPlaybackSyncAssignmentDragData(createPlaybackSyncAssignmentDragData(''))).toBe(false);
+    expect(isPlaybackSyncAssignmentDragData(createPlaybackSyncAssignmentDragData('   '))).toBe(false);
+    expect(isPlaybackSyncAssignmentDragData({ type: 'playback-sync-assignment' })).toBe(false);
+    expect(isPlaybackSyncAssignmentDragData({ type: 'file', recordingName: 'camera' })).toBe(false);
+    expect(isPlaybackSyncAssignmentDragData({ type: 'stream-assignment', streamName: 'camera' })).toBe(
       false
     );
   });
@@ -51,7 +51,7 @@ describe('playback assignment drag data', () => {
     const setSlot = (slot: number, path: string | null) => assignments.set(slot, path);
 
     expect(
-      assignDroppedRecording(createPlaybackAssignmentDragData('nested/new'), 0, setSlot)
+      assignDroppedSyncRecording(createPlaybackSyncAssignmentDragData('nested/new'), 0, setSlot)
     ).toBe(true);
     expect(assignments).toEqual(
       new Map([
@@ -66,9 +66,9 @@ describe('playback assignment drag data', () => {
     const setSlot = (slot: number, path: string | null) => assignments.set(slot, path);
 
     expect(
-      assignDroppedRecording({ type: 'playback-assignment', recordingName: '' }, 0, setSlot)
+      assignDroppedSyncRecording({ type: 'playback-sync-assignment', recordingName: '' }, 0, setSlot)
     ).toBe(false);
-    expect(assignDroppedRecording({ type: 'external', recordingName: 'new' }, 0, setSlot)).toBe(
+    expect(assignDroppedSyncRecording({ type: 'external', recordingName: 'new' }, 0, setSlot)).toBe(
       false
     );
     expect(assignments).toEqual(new Map([[0, 'existing']]));
@@ -77,7 +77,7 @@ describe('playback assignment drag data', () => {
 
 describe('playback grid drag integration', () => {
   afterEach(() => {
-    usePlaybackStore.setState({ slots: new Map() });
+    usePlaybackSyncStore.setState({ slots: new Map() });
   });
 
   test('wires sidebar draggables and tile drop targets with visual feedback', () => {
@@ -90,8 +90,8 @@ describe('playback grid drag integration', () => {
     expect(sidebarSource).toContain('styles.draggingRecordingButton');
     expect(sidebarSource).toContain("cursor: 'grab'");
 
-    expect(tileSource).toContain('return registerPlaybackDropTarget({');
-    expect(tileSource).toContain('canDrop: ({ source }) => isPlaybackAssignmentDragData(source.data)');
+    expect(tileSource).toContain('return registerPlaybackSyncDropTarget({');
+    expect(tileSource).toContain('canDrop: ({ source }) => isPlaybackSyncAssignmentDragData(source.data)');
     expect(tileSource).toContain('onDragEnter: () => setIsDraggedOver(true)');
     expect(tileSource).toContain('styles.dragOverTile');
     expect(tileSource).not.toContain('Choose stream');
@@ -118,10 +118,10 @@ describe('playback grid drag integration', () => {
 
     const payload = registration?.getInitialData?.({} as never);
     expect(payload).toEqual({
-      type: 'playback-assignment',
+      type: 'playback-sync-assignment',
       recordingName: 'building/floor/camera',
     });
-    expect(isPlaybackAssignmentDragData(payload ?? {})).toBe(true);
+    expect(isPlaybackSyncAssignmentDragData(payload ?? {})).toBe(true);
 
     registration?.onDragStart?.({} as never);
     registration?.onDrop?.({} as never);
@@ -132,7 +132,7 @@ describe('playback grid drag integration', () => {
   });
 
   test('registered valid drop assigns the exact playback-store slot', () => {
-    usePlaybackStore.setState({
+    usePlaybackSyncStore.setState({
       slots: new Map([
         [1, 'untouched'],
         [3, 'occupied'],
@@ -141,11 +141,11 @@ describe('playback grid drag integration', () => {
     let registration: Parameters<typeof dropTargetForElements>[0] | undefined;
     let cleanupCount = 0;
     const draggedOverStates: boolean[] = [];
-    const cleanup = registerPlaybackDropTarget(
+    const cleanup = registerPlaybackSyncDropTarget(
       {
         element: {} as never,
         slot: 3,
-        setSlot: usePlaybackStore.getState().setSlot,
+        setSlot: usePlaybackSyncStore.getState().setSlot,
         setIsDraggedOver: (isDraggedOver) => draggedOverStates.push(isDraggedOver),
       },
       (args) => {
@@ -156,13 +156,13 @@ describe('playback grid drag integration', () => {
       }
     );
     const source = {
-      data: createPlaybackAssignmentDragData('building/floor/replacement'),
+      data: createPlaybackSyncAssignmentDragData('building/floor/replacement'),
     };
 
     expect(registration?.canDrop?.({ source } as never)).toBe(true);
     expect(
       registration?.canDrop?.({
-        source: { data: { type: 'playback-assignment', recordingName: '' } },
+        source: { data: { type: 'playback-sync-assignment', recordingName: '' } },
       } as never)
     ).toBe(false);
     expect(
@@ -180,7 +180,7 @@ describe('playback grid drag integration', () => {
     registration?.onDrop?.({ source } as never);
 
     expect(draggedOverStates).toEqual([true, false]);
-    expect(usePlaybackStore.getState().slots).toEqual(
+    expect(usePlaybackSyncStore.getState().slots).toEqual(
       new Map([
         [1, 'untouched'],
         [3, 'building/floor/replacement'],

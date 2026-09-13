@@ -5,7 +5,7 @@ import {
   derivePlaybackBaseUrl,
   extractPlaybackPort,
   fetchPlaybackSpans,
-} from '../src/api/playbackApi';
+} from '../src/api/playbackSyncApi';
 
 const originalFetch = globalThis.fetch;
 
@@ -165,7 +165,7 @@ describe('fetchPlaybackSpans', () => {
 
 describe('playback /list URL usage contract', () => {
   test('shared SpanInterval consumers use the numeric helpers, not raw span URLs', async () => {
-    const source = await Bun.file('src/api/playbackApi.ts').text();
+    const source = await Bun.file('src/api/playbackSyncApi.ts').text();
     expect(source).toContain("params.set('format', 'fmp4')");
     expect(source).toContain("params.set('path', pathName)");
     expect(source).toContain("response.status === 404");

@@ -1,6 +1,6 @@
 import { ApiError } from '@src/api/client';
 import { playbackSpanSchema, type PlaybackSpan } from '@src/schemas/recordingSchema';
-import { toRfc3339 } from '@src/utils/playbackTime';
+import { toRfc3339 } from '@src/utils/playbackSyncTime';
 
 /**
  * Helpers for the MediaMTX playback HTTP server, which is separate from the
@@ -11,7 +11,7 @@ import { toRfc3339 } from '@src/utils/playbackTime';
 
 export const DEFAULT_PLAYBACK_PORT = '9996';
 
-export interface PlaybackEndpointConfig {
+export interface PlaybackSyncEndpointConfig {
   playback?: boolean;
   playbackAddress?: string;
   playbackEncryption?: boolean;
@@ -39,7 +39,7 @@ export function extractPlaybackPort(
  */
 export function derivePlaybackBaseUrl(
   serverUrl: string,
-  config: PlaybackEndpointConfig
+  config: PlaybackSyncEndpointConfig
 ): string | null {
   let api: URL;
   try {

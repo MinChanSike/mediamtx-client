@@ -20,7 +20,7 @@ import {
   VideoOff16Regular,
 } from '@fluentui/react-icons';
 import type { Recording } from '@src/schemas/recordingSchema';
-import { createPlaybackAssignmentDragData } from '@src/components/playback/playbackDragData';
+import { createPlaybackSyncAssignmentDragData } from '@src/components/playbackSync/playbackSyncDragData';
 
 interface PlaybackRecordingSidebarProps {
   recordings: Recording[];
@@ -196,7 +196,7 @@ export function registerRecordingDraggable(
 ) {
   return register({
     element,
-    getInitialData: () => createPlaybackAssignmentDragData(recordingName),
+    getInitialData: () => createPlaybackSyncAssignmentDragData(recordingName),
     onDragStart: () => setIsDragging(true),
     onDrop: () => setIsDragging(false),
   });
@@ -272,7 +272,7 @@ function RecordingListItem({
   );
 }
 
-export default function PlaybackRecordingSidebar({
+export default function PlaybackSyncRecordingSidebar({
   recordings,
   assignedPaths,
   selectedDay,

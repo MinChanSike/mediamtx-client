@@ -5,7 +5,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import AppSidebar from '@src/components/layout/AppSidebar';
 import useAppStore from '@src/store/useAppStore';
 import useMediaMTXApiStore from '@src/store/useMediaMTXApiStore';
-import usePlaybackStore from '@src/store/usePlaybackStore';
+import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 
 const originalFetch = globalThis.fetch;
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
@@ -118,7 +118,7 @@ beforeEach(() => {
     theme: 'dark',
   });
   useMediaMTXApiStore.getState().resetForServerUrl('http://sidebar.mediamtx.test');
-  usePlaybackStore.setState({ endpointOverrides: {} });
+  usePlaybackSyncStore.setState({ endpointOverrides: {} });
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
     value: {
@@ -141,7 +141,7 @@ afterEach(async () => {
   globalThis.fetch = originalFetch;
   restoreWindow();
   useMediaMTXApiStore.getState().resetForServerUrl('');
-  usePlaybackStore.setState({ endpointOverrides: {} });
+  usePlaybackSyncStore.setState({ endpointOverrides: {} });
   useAppStore.setState({
     activeTab: 'dashboard',
     isSidebarCollapsed: false,
@@ -259,7 +259,7 @@ describe('collapsed AppSidebar behavior', () => {
     });
 
     expect(useAppStore.getState().serverUrl).toBe('http://new-api.test:9997');
-    expect(usePlaybackStore.getState().endpointOverrides['http://new-api.test:9997']).toBe(
+    expect(usePlaybackSyncStore.getState().endpointOverrides['http://new-api.test:9997']).toBe(
       'http://new-playback.test:9996'
     );
   });

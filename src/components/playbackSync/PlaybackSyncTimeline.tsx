@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import type { NormalizedSpan } from '@src/utils/playbackIntervals';
-import { clipSpansToRange, findSpanAt } from '@src/utils/playbackIntervals';
-import { formatLocalTimeOfDay, getDayRangeMs } from '@src/utils/playbackTime';
+import type { NormalizedSpan } from '@src/utils/playbackSyncIntervals';
+import { clipSpansToRange, findSpanAt } from '@src/utils/playbackSyncIntervals';
+import { formatLocalTimeOfDay, getDayRangeMs } from '@src/utils/playbackSyncTime';
 
 export interface TimelineLane {
   slot: number;
@@ -161,7 +161,7 @@ function percentOf(value: number, startMs: number, totalMs: number): number {
  * stream renders an availability lane with visible gaps; the shared cursor
  * tracks the shared clock and supports click and drag seeking.
  */
-export default function PlaybackTimeline({ lanes, dayKey, positionMs, onSeek }: PlaybackTimelineProps) {
+export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek }: PlaybackTimelineProps) {
   const styles = useStyles();
   const trackRef = useRef<HTMLDivElement>(null);
   // The ref tracks the active scrub synchronously so a pointerup in the same

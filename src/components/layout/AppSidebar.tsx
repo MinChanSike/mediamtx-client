@@ -24,13 +24,13 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@src/components/common/ThemeToggle';
 import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
-import { usePlaybackEndpoint } from '@src/hooks/usePlaybackEndpoint';
-import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
+import { usePlaybackSyncEndpoint } from '@src/hooks/usePlaybackSyncEndpoint';
+import { DASHBOARD_ROUTE, PLAYBACK_SYNC_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
-import usePlaybackStore from '@src/store/usePlaybackStore';
+import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
 
-type NavTab = 'dashboard' | 'streams' | 'playback';
+type NavTab = 'dashboard' | 'streams' | 'playback-sync';
 
 type SidebarNavItem = {
   id: NavTab;
@@ -53,9 +53,9 @@ const NAV_ITEMS: SidebarNavItem[] = [
     icon: <Video24Regular />,
   },
   {
-    id: 'playback',
-    label: 'Playback',
-    path: PLAYBACK_ROUTE,
+    id: 'playback-sync',
+    label: 'Playback Sync',
+    path: PLAYBACK_SYNC_ROUTE,
     icon: <History24Regular />,
   },
 ];
@@ -203,7 +203,7 @@ const useStyles = makeStyles({
 
 export function pathToTab(pathname: string): NavTab {
   if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`)) return 'streams';
-  if (pathname === PLAYBACK_ROUTE || pathname.startsWith(`${PLAYBACK_ROUTE}/`)) return 'playback';
+  if (pathname === PLAYBACK_SYNC_ROUTE || pathname.startsWith(`${PLAYBACK_SYNC_ROUTE}/`)) return 'playback-sync';
   return 'dashboard';
 }
 
@@ -230,8 +230,8 @@ export default function AppSidebar() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const serverUrl = useAppStore((s) => s.serverUrl);
   const setServerUrl = useAppStore((s) => s.setServerUrl);
-  const setPlaybackEndpointOverride = usePlaybackStore((s) => s.setEndpointOverride);
-  const playbackEndpoint = usePlaybackEndpoint();
+  const setPlaybackEndpointOverride = usePlaybackSyncStore((s) => s.setEndpointOverride);
+  const playbackEndpoint = usePlaybackSyncEndpoint();
 
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState(serverUrl);

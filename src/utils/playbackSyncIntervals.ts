@@ -1,5 +1,5 @@
 import type { PlaybackSpan } from '@src/schemas/recordingSchema';
-import { parseRfc3339 } from '@src/utils/playbackTime';
+import { parseRfc3339 } from '@src/utils/playbackSyncTime';
 
 /**
  * Interval math for recorded playback.

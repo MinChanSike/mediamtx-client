@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import { hasRecordingOnDay } from '../src/components/playback/PlaybackRecordingSidebar';
+import { hasRecordingOnDay } from '../src/components/playbackSync/PlaybackSyncRecordingSidebar';
 
 describe('playback reference layout contract', () => {
   test('uses the requested rail, wall, timeline, and transport composition', async () => {
-    const page = await Bun.file('src/pages/PlaybackPage.tsx').text();
-    const rail = await Bun.file('src/components/playback/PlaybackRecordingSidebar.tsx').text();
-    const timeline = await Bun.file('src/components/playback/PlaybackTimeline.tsx').text();
-    const controls = await Bun.file('src/components/playback/PlaybackControls.tsx').text();
-    const grid = await Bun.file('src/components/playback/PlaybackGrid.tsx').text();
-    const tile = await Bun.file('src/components/playback/PlaybackTile.tsx').text();
+    const page = await Bun.file('src/pages/PlaybackSyncPage.tsx').text();
+    const rail = await Bun.file('src/components/playbackSync/PlaybackSyncRecordingSidebar.tsx').text();
+    const timeline = await Bun.file('src/components/playbackSync/PlaybackSyncTimeline.tsx').text();
+    const controls = await Bun.file('src/components/playbackSync/PlaybackSyncControls.tsx').text();
+    const grid = await Bun.file('src/components/playbackSync/PlaybackSyncGrid.tsx').text();
+    const tile = await Bun.file('src/components/playbackSync/PlaybackSyncTile.tsx').text();
 
     expect(page).toContain("height: '46px'");
     expect(page).toContain("height: 'calc(100vh - 40px)'");
@@ -16,18 +16,18 @@ describe('playback reference layout contract', () => {
     expect(page).not.toContain("marginLeft: '-8px'");
     expect(page).toContain('Playback');
     expect(page).not.toContain('role="group" aria-label="Grid layout size"');
-    expect(page).toContain('<PlaybackRecordingSidebar');
-    expect(page).toContain('<PlaybackGrid');
-    expect(page).toContain('<PlaybackTimeline');
-    expect(page).toContain('<PlaybackControls');
-    expect(page.indexOf('<PlaybackGrid')).toBeLessThan(page.indexOf('<PlaybackTimeline'));
-    expect(page.indexOf('<PlaybackTimeline')).toBeLessThan(page.indexOf('<PlaybackControls'));
+    expect(page).toContain('<PlaybackSyncRecordingSidebar');
+    expect(page).toContain('<PlaybackSyncGrid');
+    expect(page).toContain('<PlaybackSyncTimeline');
+    expect(page).toContain('<PlaybackSyncControls');
+    expect(page.indexOf('<PlaybackSyncGrid')).toBeLessThan(page.indexOf('<PlaybackSyncTimeline'));
+    expect(page.indexOf('<PlaybackSyncTimeline')).toBeLessThan(page.indexOf('<PlaybackSyncControls'));
     expect(grid).toContain("'1x2': { slotCount: 2, columns: 2 }");
     expect(grid).toContain('<GridLayoutIcon layout={option} />');
     expect(grid).toContain('bottom: \'100%\'');
     expect(tile).toContain('Drag a recorded stream here to play');
-    expect(tile).toContain('registerPlaybackDropTarget');
-    expect(await Bun.file('src/components/playback/PlaybackSlotPicker.tsx').exists()).toBe(false);
+    expect(tile).toContain('registerPlaybackSyncDropTarget');
+    expect(await Bun.file('src/components/playbackSync/PlaybackSlotPicker.tsx').exists()).toBe(false);
 
     expect(rail).toContain("width: '220px'");
     expect(rail).not.toContain('Last recording');

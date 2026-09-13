@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import {
-  RecordedPlaybackController,
-  type PlaybackGridSnapshot,
-} from '@src/playback/recordedPlaybackController';
-import usePlaybackStore from '@src/store/usePlaybackStore';
-import type { NormalizedSpan } from '@src/utils/playbackIntervals';
-import { getDayRangeMs } from '@src/utils/playbackTime';
+  RecordedPlaybackSyncController,
+  type PlaybackSyncGridSnapshot,
+} from '@src/playbackSync/recordedPlaybackSyncController';
+import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
+import type { NormalizedSpan } from '@src/utils/playbackSyncIntervals';
+import { getDayRangeMs } from '@src/utils/playbackSyncTime';
 
 const POSITION_SYNC_INTERVAL_MS = 250;
 
-export interface RecordedPlaybackBinding {
-  controller: RecordedPlaybackController;
-  snapshot: PlaybackGridSnapshot;
+export interface RecordedPlaybackSyncBinding {
+  controller: RecordedPlaybackSyncController;
+  snapshot: PlaybackSyncGridSnapshot;
 }
 
 /**
@@ -22,17 +22,17 @@ export interface RecordedPlaybackBinding {
  * - mirrors isPlaying/shared timestamp into the playback store for the UI,
  * - disposes the controller (releasing all media) on unmount/route change.
  */
-export function useRecordedPlayback(
+export function useRecordedPlaybackSync(
   spansByPath: Record<string, NormalizedSpan[] | undefined>,
   endpoint: string | null
-): RecordedPlaybackBinding {
-  const controllerRef = useRef<RecordedPlaybackController | null>(null);
+): RecordedPlaybackSyncBinding {
+  const controllerRef = useRef<RecordedPlaybackSyncController | null>(null);
   // StrictMode double-invokes effects in development; dispose() runs on the
   // simulated unmount, so a disposed controller is replaced instead of
   // leaving the page with a dead one.
   if (!controllerRef.current || controllerRef.current.isDisposed()) {
-    controllerRef.current = new RecordedPlaybackController({
-      initialPositionMs: usePlaybackStore.getState().sharedTimestampMs,
+    controllerRef.current = new RecordedPlaybackSyncController({
+      initialPositionMs: usePlaybackSyncStore.getState().sharedTimestampMs,
     });
   }
   const controller = controllerRef.current;
@@ -55,7 +55,7 @@ export function useRecordedPlayback(
   }, [controller, spansByPath]);
 
   // Day changes pause the grid and reset the clock to local midnight.
-  const selectedDay = usePlaybackStore((s) => s.selectedDay);
+  const selectedDay = usePlaybackSyncStore((s) => s.selectedDay);
   useEffect(() => {
     const dayRange = getDayRangeMs(selectedDay);
     if (!dayRange) return;
@@ -63,18 +63,18 @@ export function useRecordedPlayback(
     controller.pause();
     controller.seekTo(dayRange.startMs);
 
-    const store = usePlaybackStore.getState();
+    const store = usePlaybackSyncStore.getState();
     store.setIsPlaying(false);
     store.setSharedTimestamp(dayRange.startMs);
   }, [controller, selectedDay]);
 
   // Playback rate and the selected audio slot are store-driven.
-  const rate = usePlaybackStore((s) => s.rate);
+  const rate = usePlaybackSyncStore((s) => s.rate);
   useEffect(() => {
     controller.setRate(rate);
   }, [controller, rate]);
 
-  const audioSlot = usePlaybackStore((s) => s.audioSlot);
+  const audioSlot = usePlaybackSyncStore((s) => s.audioSlot);
   useEffect(() => {
     controller.setAudioSlot(audioSlot);
   }, [controller, audioSlot]);
@@ -82,7 +82,7 @@ export function useRecordedPlayback(
   // Mirror controller transport state into the store for the UI.
   useEffect(() => {
     const sync = () => {
-      const store = usePlaybackStore.getState();
+      const store = usePlaybackSyncStore.getState();
       const playing = controller.isPlaying();
       if (store.isPlaying !== playing) store.setIsPlaying(playing);
 

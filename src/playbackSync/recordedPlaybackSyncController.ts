@@ -1,11 +1,11 @@
-import { buildPlaybackGetUrl } from '@src/api/playbackApi';
-import { SharedClock } from '@src/playback/sharedClock';
+import { buildPlaybackGetUrl } from '@src/api/playbackSyncApi';
+import { SharedClock } from '@src/playbackSync/sharedClock';
 import {
   computeGapSkipTarget,
   findSpanAt,
   hasCoverageAt,
   type NormalizedSpan,
-} from '@src/utils/playbackIntervals';
+} from '@src/utils/playbackSyncIntervals';
 
 /**
  * Recorded playback grid controller.
@@ -43,7 +43,7 @@ export interface TileSnapshot {
   isBuffering: boolean;
 }
 
-export interface PlaybackGridSnapshot {
+export interface PlaybackSyncGridSnapshot {
   version: number;
   tiles: Record<string, TileSnapshot>;
 }
@@ -65,7 +65,7 @@ interface TileRuntime {
   isBuffering: boolean;
 }
 
-export interface RecordedPlaybackControllerOptions {
+export interface RecordedPlaybackSyncControllerOptions {
   initialPositionMs?: number;
   buildGetUrl?: BuildGetUrl;
   /** Injectable monotonic clock for tests. */
@@ -87,7 +87,7 @@ function tileSnapshotOf(tile: TileRuntime): TileSnapshot {
   };
 }
 
-export class RecordedPlaybackController {
+export class RecordedPlaybackSyncController {
   private readonly clock: SharedClock;
   private readonly buildGetUrl: BuildGetUrl;
   private readonly tiles = new Map<number, TileRuntime>();
@@ -96,10 +96,10 @@ export class RecordedPlaybackController {
   private rate = 1;
   private audioSlot: number | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
-  private snapshot: PlaybackGridSnapshot = { version: 0, tiles: {} };
+  private snapshot: PlaybackSyncGridSnapshot = { version: 0, tiles: {} };
   private disposed = false;
 
-  constructor(options: RecordedPlaybackControllerOptions = {}) {
+  constructor(options: RecordedPlaybackSyncControllerOptions = {}) {
     this.clock = new SharedClock(options.initialPositionMs ?? 0, options.nowFn);
     this.buildGetUrl = options.buildGetUrl ?? buildPlaybackGetUrl;
   }
@@ -115,7 +115,7 @@ export class RecordedPlaybackController {
     };
   };
 
-  getSnapshot = (): PlaybackGridSnapshot => this.snapshot;
+  getSnapshot = (): PlaybackSyncGridSnapshot => this.snapshot;
 
   private emit(): void {
     if (this.disposed) return;

@@ -19,20 +19,20 @@ import {
   Warning24Regular,
 } from '@fluentui/react-icons';
 import type {
-  RecordedPlaybackController,
+  RecordedPlaybackSyncController,
   TileSnapshot,
-} from '@src/playback/recordedPlaybackController';
-import usePlaybackStore from '@src/store/usePlaybackStore';
+} from '@src/playbackSync/recordedPlaybackSyncController';
+import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
 import {
-  assignDroppedRecording,
-  isPlaybackAssignmentDragData,
-} from '@src/components/playback/playbackDragData';
+  assignDroppedSyncRecording,
+  isPlaybackSyncAssignmentDragData,
+} from '@src/components/playbackSync/playbackSyncDragData';
 
 interface PlaybackTileProps {
   slot: number;
   path: string | null;
-  controller: RecordedPlaybackController;
+  controller: RecordedPlaybackSyncController;
   tile: TileSnapshot | undefined;
   spansError: Error | null;
   spansLoading: boolean;
@@ -173,18 +173,18 @@ interface RegisterPlaybackDropTargetOptions {
   setIsDraggedOver: (isDraggedOver: boolean) => void;
 }
 
-export function registerPlaybackDropTarget(
+export function registerPlaybackSyncDropTarget(
   { element, slot, setSlot, setIsDraggedOver }: RegisterPlaybackDropTargetOptions,
   register: typeof dropTargetForElements = dropTargetForElements
 ) {
   return register({
     element,
-    canDrop: ({ source }) => isPlaybackAssignmentDragData(source.data),
+    canDrop: ({ source }) => isPlaybackSyncAssignmentDragData(source.data),
     onDragEnter: () => setIsDraggedOver(true),
     onDragLeave: () => setIsDraggedOver(false),
     onDrop: ({ source }) => {
       setIsDraggedOver(false);
-      assignDroppedRecording(source.data, slot, setSlot);
+      assignDroppedSyncRecording(source.data, slot, setSlot);
     },
   });
 }
@@ -195,7 +195,7 @@ export function registerPlaybackDropTarget(
  * retry states so a failing tile never disturbs the rest of the grid. Tiles
  * accept dragged recordings from the sidebar to choose which cell plays them.
  */
-export default function PlaybackTile({
+export default function PlaybackSyncTile({
   slot,
   path,
   controller,
@@ -209,10 +209,10 @@ export default function PlaybackTile({
   const rootRef = useRef<HTMLDivElement>(null);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
 
-  const audioSlot = usePlaybackStore((s) => s.audioSlot);
-  const setAudioSlot = usePlaybackStore((s) => s.setAudioSlot);
-  const clearSlot = usePlaybackStore((s) => s.clearSlot);
-  const setSlot = usePlaybackStore((s) => s.setSlot);
+  const audioSlot = usePlaybackSyncStore((s) => s.audioSlot);
+  const setAudioSlot = usePlaybackSyncStore((s) => s.setAudioSlot);
+  const clearSlot = usePlaybackSyncStore((s) => s.clearSlot);
+  const setSlot = usePlaybackSyncStore((s) => s.setSlot);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -225,7 +225,7 @@ export default function PlaybackTile({
     const element = rootRef.current;
     if (!element) return;
 
-    return registerPlaybackDropTarget({
+    return registerPlaybackSyncDropTarget({
       element,
       slot,
       setSlot,

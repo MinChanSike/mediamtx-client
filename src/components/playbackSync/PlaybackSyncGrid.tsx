@@ -1,8 +1,8 @@
 import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import GridLayoutIcon from '@src/components/common/GridLayoutIcon';
-import type { RecordedPlaybackController, TileSnapshot } from '@src/playback/recordedPlaybackController';
-import usePlaybackStore, { type PlaybackLayout } from '@src/store/usePlaybackStore';
-import PlaybackTile from '@src/components/playback/PlaybackTile';
+import type { RecordedPlaybackSyncController, TileSnapshot } from '@src/playbackSync/recordedPlaybackSyncController';
+import usePlaybackSyncStore, { type PlaybackLayout } from '@src/store/usePlaybackSyncStore';
+import PlaybackSyncTile from '@src/components/playbackSync/PlaybackSyncTile';
 
 export interface SlotSpansStatus {
   error: Error | null;
@@ -10,7 +10,7 @@ export interface SlotSpansStatus {
 }
 
 interface PlaybackGridProps {
-  controller: RecordedPlaybackController;
+  controller: RecordedPlaybackSyncController;
   tileSnapshots: Record<string, TileSnapshot>;
   slotSpansStatus: Array<SlotSpansStatus>;
 }
@@ -76,15 +76,15 @@ const useStyles = makeStyles({
  * Recorded playback grid with `1x1` and `2x2` layouts. Tiles are independent:
  * each manages its own `<video>` element, states and retries.
  */
-export default function PlaybackGrid({
+export default function PlaybackSyncGrid({
   controller,
   tileSnapshots,
   slotSpansStatus,
 }: PlaybackGridProps) {
   const styles = useStyles();
-  const layout = usePlaybackStore((s) => s.layout);
-  const setLayout = usePlaybackStore((s) => s.setLayout);
-  const slots = usePlaybackStore((s) => s.slots);
+  const layout = usePlaybackSyncStore((s) => s.layout);
+  const setLayout = usePlaybackSyncStore((s) => s.setLayout);
+  const slots = usePlaybackSyncStore((s) => s.slots);
 
   const details = GRID_DETAILS[layout];
 
@@ -109,7 +109,7 @@ export default function PlaybackGrid({
         style={{ gridTemplateColumns: `repeat(${details.columns}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: details.slotCount }, (_, slot) => (
-          <PlaybackTile
+          <PlaybackSyncTile
             key={`${slot}:${slots.get(slot) ?? 'empty'}`}
             slot={slot}
             path={slots.get(slot) ?? null}

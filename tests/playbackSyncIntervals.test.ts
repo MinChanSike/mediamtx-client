@@ -8,7 +8,7 @@ import {
   hasCoverageAt,
   normalizeSpans,
   unionRanges,
-} from '../src/utils/playbackIntervals';
+} from '../src/utils/playbackSyncIntervals';
 import type { PlaybackSpan } from '../src/schemas/recordingSchema';
 
 const T0 = Date.UTC(2026, 0, 2, 0, 0, 0);

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getVisibleSlotPaths } from '../src/pages/PlaybackPage';
+import { getVisibleSlotPaths } from '../src/pages/PlaybackSyncPage';
 
 describe('recorded playback visible slots', () => {
   const assigned = ['cam-a', 'cam-b', 'cam-c', 'cam-d'];

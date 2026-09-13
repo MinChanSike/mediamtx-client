@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
   createPlaybackStore,
-  PLAYBACK_PREFERENCES_STORAGE_KEY,
+  PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY,
   type PlaybackState,
-} from '../src/store/usePlaybackStore';
-import { buildSpansKey, isSameSpanIdentity } from '../src/hooks/usePlaybackSpans';
+} from '../src/store/usePlaybackSyncStore';
+import { buildSpansKey, isSameSpanIdentity } from '../src/hooks/usePlaybackSyncSpans';
 import type { StateStorage } from 'zustand/middleware';
 
 class MemoryStorage implements Storage {
@@ -147,14 +147,14 @@ describe('playback store', () => {
     expect(restored.isPlaying).toBe(false);
     expect(restored.audioSlot).toBeNull();
 
-    const raw = JSON.parse(storage.getItem(PLAYBACK_PREFERENCES_STORAGE_KEY)!);
+    const raw = JSON.parse(storage.getItem(PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY)!);
     expect(raw.state.slots).toEqual([[1, 'cam-b']]);
     expect(raw.state.selectedDay).toBeUndefined();
   });
 
   test('migrates the previous 1x1 playback preference to 1x2', () => {
     storage.setItem(
-      PLAYBACK_PREFERENCES_STORAGE_KEY,
+      PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY,
       JSON.stringify({ state: { layout: '1x1', slots: [], endpointOverrides: {} }, version: 0 })
     );
 
@@ -164,7 +164,7 @@ describe('playback store', () => {
 
   test('restores only valid slot entries and layouts', () => {
     storage.setItem(
-      PLAYBACK_PREFERENCES_STORAGE_KEY,
+      PLAYBACK_SYNC_PREFERENCES_STORAGE_KEY,
       JSON.stringify({
         state: {
           layout: '3x3',

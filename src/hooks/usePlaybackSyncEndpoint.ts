@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
-import { derivePlaybackBaseUrl } from '@src/api/playbackApi';
+import { derivePlaybackBaseUrl } from '@src/api/playbackSyncApi';
 import { useStoreBackedGlobalConfig } from '@src/hooks/useMediaMTXApi';
 import useAppStore from '@src/store/useAppStore';
-import usePlaybackStore from '@src/store/usePlaybackStore';
+import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 
-export type PlaybackEndpointStatus = 'loading' | 'ready' | 'disabled' | 'invalid';
+export type PlaybackSyncEndpointStatus = 'loading' | 'ready' | 'disabled' | 'invalid';
 
-export interface PlaybackEndpoint {
-  status: PlaybackEndpointStatus;
+export interface PlaybackSyncEndpoint {
+  status: PlaybackSyncEndpointStatus;
   /** Resolved base URL once ready; null otherwise. */
   baseUrl: string | null;
   /** Base URL derived from config, even when an override is active. */
@@ -20,9 +20,9 @@ export interface PlaybackEndpoint {
  * user-editable override persisted per API server wins, otherwise the URL is
  * derived from the API hostname, `playbackAddress`, and `playbackEncryption`.
  */
-export function usePlaybackEndpoint(): PlaybackEndpoint {
+export function usePlaybackSyncEndpoint(): PlaybackSyncEndpoint {
   const serverUrl = useAppStore((s) => s.serverUrl);
-  const endpointOverrides = usePlaybackStore((s) => s.endpointOverrides);
+  const endpointOverrides = usePlaybackSyncStore((s) => s.endpointOverrides);
   const { data: config, isLoading } = useStoreBackedGlobalConfig();
 
   return useMemo(() => {
