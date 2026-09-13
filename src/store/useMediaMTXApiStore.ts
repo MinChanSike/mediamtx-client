@@ -9,7 +9,12 @@ import type { ServerInfo } from '@src/api/serverInfoApi';
 import type { PathList } from '@src/schemas/pathSchema';
 import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
 
-export type ApiMutationKey = 'addStream' | 'editStream' | 'deleteStream' | 'kickStreamTarget';
+export type ApiMutationKey =
+  | 'addStream'
+  | 'editStream'
+  | 'deleteStream'
+  | 'kickStreamTarget'
+  | 'toggleStreamRecording';
 
 export interface ApiResourceState<T> {
   data: T | undefined;
@@ -126,6 +131,7 @@ function initialMutations(): Record<ApiMutationKey, ApiMutationState> {
     editStream: emptyMutation(),
     deleteStream: emptyMutation(),
     kickStreamTarget: emptyMutation(),
+    toggleStreamRecording: emptyMutation(),
   };
 }
 

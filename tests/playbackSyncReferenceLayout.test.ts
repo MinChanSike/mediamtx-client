@@ -10,8 +10,19 @@ describe('playback reference layout contract', () => {
     const grid = await Bun.file('src/components/playbackSync/PlaybackSyncGrid.tsx').text();
     const tile = await Bun.file('src/components/playbackSync/PlaybackSyncTile.tsx').text();
 
-    expect(page).toContain("height: '46px'");
-    expect(page).toContain("height: 'calc(100vh - 40px)'");
+    expect(page).toContain("import PageHeader from '@src/components/common/PageHeader';");
+    expect(page).toContain('title="Playback Sync"');
+    expect(page).toContain(
+      'subtitle="Synchronized recorded stream playback on the MediaMTX server"'
+    );
+    expect(page).not.toContain('topBar: {');
+    expect(page).toMatch(
+      /root: \{[\s\S]*?height: 'calc\(100vh - 40px\)'[\s\S]*?minHeight: 0[\s\S]*?minWidth: 0[\s\S]*?overflow: 'hidden'/
+    );
+    expect(page).not.toMatch(/root: \{[\s\S]*?gap: tokens\.spacingVerticalM/);
+    expect(page).toMatch(
+      /gridArea: \{[\s\S]*?minWidth: 0[\s\S]*?minHeight: 0[\s\S]*?flex: 1[\s\S]*?overflow: 'hidden'/
+    );
     expect(page).not.toContain('calc(100% + 40px)');
     expect(page).not.toContain("marginLeft: '-8px'");
     expect(page).toContain('Playback');

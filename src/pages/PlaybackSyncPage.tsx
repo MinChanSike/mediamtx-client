@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import {
   MessageBar,
   MessageBarBody,
-  Title2,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
+import PageHeader from '@src/components/common/PageHeader';
 import PlaybackSyncControls from '@src/components/playbackSync/PlaybackSyncControls';
 import PlaybackSyncGrid from '@src/components/playbackSync/PlaybackSyncGrid';
 import PlaybackSyncRecordingSidebar from '@src/components/playbackSync/PlaybackSyncRecordingSidebar';
@@ -30,15 +30,6 @@ const useStyles = makeStyles({
     minWidth: 0,
     overflow: 'hidden',
   },
-  topBar: {
-    display: 'flex',
-    height: '46px',
-    flexShrink: 0,
-    alignItems: 'center',
-  },
-  pageTitle: {
-    color: tokens.colorNeutralForeground1,
-  },
   workspace: {
     display: 'flex',
     minWidth: 0,
@@ -49,7 +40,7 @@ const useStyles = makeStyles({
   gridArea: {
     display: 'flex',
     minWidth: 0,
-    minHeight: '240px',
+    minHeight: 0,
     flex: 1,
     overflow: 'hidden',
   },
@@ -152,11 +143,10 @@ export default function PlaybackSyncPage() {
 
   return (
     <div className={styles.root}>
-      <div className={styles.topBar}>
-        <Title2 as="h1" className={styles.pageTitle}>
-          Playback Sync
-        </Title2>
-      </div>
+      <PageHeader
+        title="Playback Sync"
+        subtitle="Synchronized recorded stream playback on the MediaMTX server"
+      />
 
       <div className={styles.workspace}>
         <PlaybackSyncRecordingSidebar

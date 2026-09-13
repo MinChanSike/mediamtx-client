@@ -34,6 +34,8 @@ import usePlayerStore, { type StreamsView } from "@src/store/usePlayerStore";
 import { useDeleteStream } from "@src/hooks/useDeleteStream";
 import { resolveLatestDetailsStream } from "@src/utils/streamDetails";
 import { useKickStreamTarget } from "@src/hooks/useKickStreamTarget";
+import { useToggleStreamRecording } from "@src/hooks/useToggleStreamRecording";
+import { isStreamRecordingEnabled } from "@src/utils/recordingStatus";
 
 const useStyles = makeStyles({
   root: {
@@ -81,6 +83,7 @@ export default function StreamsPage() {
   const { data, isLoading, isError } = useMediaMTXPaths();
   const deleteMutation = useDeleteStream();
   const kickMutation = useKickStreamTarget();
+  const recordingMutation = useToggleStreamRecording();
 
   const [search, setSearch] = useState("");
   const [protocolFilter, setProtocolFilter] = useState("all");
@@ -93,6 +96,7 @@ export default function StreamsPage() {
   const [kickSourceStream, setKickSourceStream] = useState<PathItem | null>(
     null,
   );
+  const [recordingStream, setRecordingStream] = useState<PathItem | null>(null);
 
   const layout = usePlayerStore((s) => s.streamsView);
   const setLayout = usePlayerStore((s) => s.setStreamsView);
@@ -112,6 +116,14 @@ export default function StreamsPage() {
     kickSourceStream,
     streams,
   );
+  const latestRecordingStream = resolveLatestDetailsStream(
+    recordingStream,
+    streams,
+  );
+  const willStartRecording = latestRecordingStream
+    ? !isStreamRecordingEnabled(latestRecordingStream)
+    : false;
+  const recordingActionLabel = willStartRecording ? "Start Recording" : "Stop Recording";
 
   const filteredStreams = streams
     .filter((stream) => {
@@ -207,6 +219,26 @@ export default function StreamsPage() {
     });
   }
 
+  function handleToggleRecording(stream: PathItem) {
+    setRecordingStream(stream);
+  }
+
+  function handleConfirmToggleRecording() {
+    if (!latestRecordingStream) return;
+
+    recordingMutation.mutate(
+      {
+        pathName: latestRecordingStream.name,
+        record: !isStreamRecordingEnabled(latestRecordingStream),
+        isConfigured: latestRecordingStream.isConfigured,
+        sourceUri: latestRecordingStream.source,
+      },
+      {
+        onSettled: () => setRecordingStream(null),
+      },
+    );
+  }
+
   return (
     <div className={styles.root}>
       <PageHeader
@@ -255,6 +287,8 @@ export default function StreamsPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onKickSource={handleKickSource}
+                onToggleRecording={handleToggleRecording}
+                recordingActionPending={recordingMutation.isPending}
               />
             ) : (
               <MultiPlayerGrid streams={filteredStreams} />
@@ -327,6 +361,38 @@ export default function StreamsPage() {
                 onClick={handleConfirmKickSource}
               >
                 {kickMutation.isPending ? "Kicking..." : "Kick Source"}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
+      <Dialog
+        open={!!latestRecordingStream}
+        onOpenChange={(_, data) => {
+          if (!data.open) setRecordingStream(null);
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>{recordingActionLabel}</DialogTitle>
+            <DialogContent>
+              {latestRecordingStream && (
+                <Text>
+                  {willStartRecording
+                    ? `Start recording stream "${latestRecordingStream.name}"?`
+                    : `Stop recording stream "${latestRecordingStream.name}"?`}
+                </Text>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setRecordingStream(null)}>Cancel</Button>
+              <Button
+                appearance="primary"
+                disabled={recordingMutation.isPending}
+                onClick={handleConfirmToggleRecording}
+              >
+                {recordingMutation.isPending ? "Saving..." : recordingActionLabel}
               </Button>
             </DialogActions>
           </DialogBody>

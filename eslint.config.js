@@ -36,6 +36,8 @@ export default [
         RequestInit: 'readonly',
         navigator: 'readonly',
         performance: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
         RTCPeerConnection: 'readonly',
         RTCSessionDescription: 'readonly',
       },

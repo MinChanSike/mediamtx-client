@@ -4,12 +4,14 @@ import { getCompleteServerConfig, getGlobalConfig } from '@src/api/configApi';
 import { getServerInfo, type ServerInfo } from '@src/api/serverInfoApi';
 import {
   addPath,
+  addPathConfig,
   deletePath,
   getPathDetail,
   getPathsList,
   getViewerDetail,
   kickPathTarget,
   patchPath,
+  setPathRecording,
 } from '@src/api/pathsApi';
 import useAppStore from '@src/store/useAppStore';
 import useMediaMTXApiStore, {
@@ -510,6 +512,24 @@ export async function runKickStreamTargetMutation(
   const targets = Array.isArray(targetOrTargets) ? targetOrTargets : [targetOrTargets];
   await Promise.all(targets.map((target) => kickPathTarget(target)));
   await refreshPathsAfterMutation();
+}
+
+export async function runToggleStreamRecordingMutation(input: {
+  pathName: string;
+  record: boolean;
+  isConfigured?: boolean;
+  sourceUri?: string | null;
+}): Promise<void> {
+  if (input.record && !input.isConfigured) {
+    await addPathConfig(input.pathName, {
+      source: input.sourceUri || 'publisher',
+      record: true,
+    });
+  } else {
+    await setPathRecording(input.pathName, input.record);
+  }
+
+  await refreshLoadedConfigAfterMutation();
 }
 
 export function useStoreMutation<TVariables>(

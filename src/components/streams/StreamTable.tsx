@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type ElementRef } from "react";
 import {
   Badge,
   Button,
@@ -12,26 +12,33 @@ import {
   makeStyles,
   mergeClasses,
   tokens,
-} from '@fluentui/react-components';
+} from "@fluentui/react-components";
 import {
-  AddSquareRegular,
+  AppsAddInRegular,
   ArrowSortRegular,
   ArrowSortDownRegular,
   ArrowSortUpRegular,
-  DeleteRegular,
-  EditRegular,
+  // DeleteRegular,
+  // EditRegular,
   InfoRegular,
   PlayRegular,
   PlugDisconnected20Regular,
-} from '@fluentui/react-icons';
-import type { PathItem } from '@src/types/stream';
-import StatusBadge from '@src/components/common/StatusBadge';
-import { formatByteRate, formatProtocol } from '@src/utils/formatters';
-import { useTransferRates } from '@src/hooks/useTransferRates';
-import { compareTransferRates } from '@src/utils/transferRates';
-import { isStreamOnline } from '@src/utils/streamStatus';
-import { shouldEnableTableScroll } from '@src/components/streams/streamTableLayout';
-import { getDisplayProtocol, getSourceKickTarget } from '@src/utils/streamDisplay';
+  RecordRegular,
+  StopFilled,
+} from "@fluentui/react-icons";
+import type { PathItem } from "@src/types/stream";
+import RecordingStatusBadge from "@src/components/common/RecordingStatusBadge";
+import StatusBadge from "@src/components/common/StatusBadge";
+import { formatByteRate, formatProtocol } from "@src/utils/formatters";
+import { useTransferRates } from "@src/hooks/useTransferRates";
+import { compareTransferRates } from "@src/utils/transferRates";
+import { isStreamRecordingEnabled } from "@src/utils/recordingStatus";
+import { isStreamOnline } from "@src/utils/streamStatus";
+import { shouldEnableTableScroll } from "@src/components/streams/streamTableLayout";
+import {
+  getDisplayProtocol,
+  getSourceKickTarget,
+} from "@src/utils/streamDisplay";
 
 interface StreamTableProps {
   streams: PathItem[];
@@ -41,99 +48,114 @@ interface StreamTableProps {
   onEdit: (stream: PathItem) => void;
   onDelete: (stream: PathItem) => void;
   onKickSource: (stream: PathItem) => void;
+  onToggleRecording: (stream: PathItem) => void;
+  recordingActionPending?: boolean;
 }
 
-type SortColumn = 'name' | 'protocol' | 'tracks' | 'readers' | 'bytesIn' | 'bytesOut' | 'status';
-type SortDirection = 'ascending' | 'descending';
+type SortColumn =
+  | "name"
+  | "protocol"
+  | "tracks"
+  | "readers"
+  | "bytesIn"
+  | "bytesOut"
+  | "status";
+type SortDirection = "ascending" | "descending";
 
 const SORTABLE_COLUMNS: Array<{ key: SortColumn; label: string }> = [
-  { key: 'name', label: 'Stream Name' },
-  { key: 'protocol', label: 'Protocol' },
-  { key: 'tracks', label: 'Tracks' },
-  { key: 'readers', label: 'Readers' },
-  { key: 'bytesIn', label: 'Ingress' },
-  { key: 'bytesOut', label: 'Egress' },
-  { key: 'status', label: 'Status' },
+  { key: "name", label: "Stream Name" },
+  { key: "protocol", label: "Protocol" },
+  { key: "tracks", label: "Tracks" },
+  { key: "readers", label: "Readers" },
+  { key: "bytesIn", label: "Ingress" },
+  { key: "bytesOut", label: "Egress" },
+  { key: "status", label: "Status" },
 ];
 
 const useStyles = makeStyles({
   tableWrap: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    width: '100%',
+    display: "flex",
+    alignItems: "flex-start",
+    width: "100%",
     minHeight: 0,
     flex: 1,
-    overflowX: 'auto',
-    overflowY: 'hidden',
+    overflowX: "auto",
+    overflowY: "hidden",
     borderRadius: tokens.borderRadiusMedium,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     boxShadow: tokens.shadow4,
   },
   scrollTableWrap: {
-    overflowY: 'auto',
+    overflowY: "auto",
   },
   table: {
-    minWidth: '1160px',
-    tableLayout: 'fixed',
+    minWidth: "1160px",
+    tableLayout: "fixed",
   },
   headerCell: {
-    position: 'sticky',
+    position: "sticky",
     top: 0,
     zIndex: 1,
     backgroundColor: tokens.colorNeutralBackground1,
   },
   sortButton: {
-    height: '28px',
-    minHeight: '28px',
+    height: "28px",
+    minHeight: "28px",
     minWidth: 0,
     paddingLeft: 0,
     paddingRight: 0,
     fontWeight: tokens.fontWeightSemibold,
   },
   dataCell: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   clippedText: {
-    display: 'block',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    display: "block",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   emptyCell: {
     color: tokens.colorNeutralForeground3,
   },
-  actions: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+  statusBadges: {
+    display: "inline-flex",
+    alignItems: "center",
     gap: tokens.spacingHorizontalXXS,
-    whiteSpace: 'nowrap',
+    minWidth: 0,
+  },
+  actions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: tokens.spacingHorizontalXXS,
+    whiteSpace: "nowrap",
   },
   actionsCellHeader: {
-    width: 'auto',
-    minWidth: '216px',
-    '> div': { width: 'auto', justifySelf: 'center' },
+    width: "auto",
+    minWidth: "248px",
+    "> div": { width: "auto", justifySelf: "center" },
   },
   actionsCell: {
-    width: 'auto',
-    minWidth: '216px',
+    width: "auto",
+    minWidth: "248px",
   },
 });
 
 function compareStreams(a: PathItem, b: PathItem, column: SortColumn) {
   switch (column) {
-    case 'name':
+    case "name":
       return a.name.localeCompare(b.name);
-    case 'protocol':
+    case "protocol":
       return getDisplayProtocol(a).localeCompare(getDisplayProtocol(b));
-    case 'tracks':
+    case "tracks":
       return a.tracks.length - b.tracks.length;
-    case 'readers':
+    case "readers":
       return a.readers.length - b.readers.length;
-    case 'status':
+    case "status":
       return Number(isStreamOnline(a)) - Number(isStreamOnline(b));
     default:
       return 0;
@@ -145,32 +167,37 @@ export default function StreamTable({
   onDetails,
   onPlay,
   onAddToGrid,
-  onEdit,
-  onDelete,
+  // onEdit,
+  // onDelete,
   onKickSource,
+  onToggleRecording,
+  recordingActionPending = false,
 }: StreamTableProps) {
   const styles = useStyles();
   const rates = useTransferRates();
-  const tableWrapRef = useRef<ElementRef<'div'>>(null);
-  const tableRef = useRef<ElementRef<'table'>>(null);
-  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('ascending');
+  const tableWrapRef = useRef<ElementRef<"div">>(null);
+  const tableRef = useRef<ElementRef<"table">>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("name");
+  const [sortDirection, setSortDirection] =
+    useState<SortDirection>("ascending");
   const [enableTableScroll, setEnableTableScroll] = useState(false);
 
   const sortedStreams = useMemo(() => {
-    const directionMultiplier = sortDirection === 'ascending' ? 1 : -1;
+    const directionMultiplier = sortDirection === "ascending" ? 1 : -1;
 
     return streams
       .map((stream, index) => ({ stream, index }))
       .sort((a, b) => {
-        if (sortColumn === 'bytesIn' || sortColumn === 'bytesOut') {
+        if (sortColumn === "bytesIn" || sortColumn === "bytesOut") {
           const field =
-            sortColumn === 'bytesIn' ? 'inboundBytesPerSecond' : 'outboundBytesPerSecond';
+            sortColumn === "bytesIn"
+              ? "inboundBytesPerSecond"
+              : "outboundBytesPerSecond";
           return (
             compareTransferRates(
               rates[a.stream.name]?.[field] ?? null,
               rates[b.stream.name]?.[field] ?? null,
-              sortDirection === 'descending'
+              sortDirection === "descending",
             ) || a.stream.name.localeCompare(b.stream.name)
           );
         }
@@ -187,17 +214,20 @@ export default function StreamTable({
 
   const handleSort = (column: SortColumn) => {
     if (column === sortColumn) {
-      setSortDirection((current) => (current === 'ascending' ? 'descending' : 'ascending'));
+      setSortDirection((current) =>
+        current === "ascending" ? "descending" : "ascending",
+      );
       return;
     }
 
     setSortColumn(column);
-    setSortDirection('ascending');
+    setSortDirection("ascending");
   };
 
   const getSortIcon = (column: SortColumn) => {
-    if (column !== sortColumn) return <ArrowSortRegular style={{ fontSize: 16 }} />;
-    return sortDirection === 'ascending' ? (
+    if (column !== sortColumn)
+      return <ArrowSortRegular style={{ fontSize: 16 }} />;
+    return sortDirection === "ascending" ? (
       <ArrowSortUpRegular style={{ fontSize: 16 }} />
     ) : (
       <ArrowSortDownRegular style={{ fontSize: 16 }} />
@@ -210,7 +240,9 @@ export default function StreamTable({
     if (!tableWrap) return;
 
     const updateTableScroll = () => {
-      setEnableTableScroll(shouldEnableTableScroll(tableWrap.scrollHeight, tableWrap.clientHeight));
+      setEnableTableScroll(
+        shouldEnableTableScroll(tableWrap.scrollHeight, tableWrap.clientHeight),
+      );
     };
 
     updateTableScroll();
@@ -222,8 +254,8 @@ export default function StreamTable({
       return () => observer.disconnect();
     }
 
-    window.addEventListener('resize', updateTableScroll);
-    return () => window.removeEventListener('resize', updateTableScroll);
+    window.addEventListener("resize", updateTableScroll);
+    return () => window.removeEventListener("resize", updateTableScroll);
   }, [sortedStreams.length]);
 
   const smallIconStyle = { fontSize: 16 };
@@ -231,15 +263,23 @@ export default function StreamTable({
   return (
     <div
       ref={tableWrapRef}
-      className={mergeClasses(styles.tableWrap, enableTableScroll && styles.scrollTableWrap)}
+      className={mergeClasses(
+        styles.tableWrap,
+        enableTableScroll && styles.scrollTableWrap,
+      )}
     >
-      <Table ref={tableRef} aria-label="Streams" className={styles.table} size="small">
+      <Table
+        ref={tableRef}
+        aria-label="Streams"
+        className={styles.table}
+        size="small"
+      >
         <TableHeader>
           <TableRow>
             {SORTABLE_COLUMNS.map((column) => (
               <TableHeaderCell
                 key={column.key}
-                aria-sort={sortColumn === column.key ? sortDirection : 'none'}
+                aria-sort={sortColumn === column.key ? sortDirection : "none"}
                 className={styles.headerCell}
               >
                 <Button
@@ -255,7 +295,12 @@ export default function StreamTable({
                 </Button>
               </TableHeaderCell>
             ))}
-            <TableHeaderCell className={mergeClasses(styles.headerCell, styles.actionsCellHeader)}>
+            <TableHeaderCell
+              className={mergeClasses(
+                styles.headerCell,
+                styles.actionsCellHeader,
+              )}
+            >
               Actions
             </TableHeaderCell>
           </TableRow>
@@ -265,12 +310,22 @@ export default function StreamTable({
             sortedStreams.map((stream) => {
               const protocol = getDisplayProtocol(stream);
               const isOnline = isStreamOnline(stream);
+              const isRecording = isStreamRecordingEnabled(stream);
+              const recordingTitle = isRecording
+                ? "Stop recording"
+                : "Start recording";
+
               const sourceKickTarget = getSourceKickTarget(stream);
 
               return (
                 <TableRow key={stream.name}>
                   <TableCell className={styles.dataCell}>
-                    <Text size={200} weight="semibold" truncate className={styles.clippedText}>
+                    <Text
+                      size={200}
+                      weight="semibold"
+                      truncate
+                      className={styles.clippedText}
+                    >
                       {stream.name}
                     </Text>
                   </TableCell>
@@ -279,22 +334,48 @@ export default function StreamTable({
                       {formatProtocol(protocol)}
                     </Badge>
                   </TableCell>
-                  <TableCell className={styles.dataCell}>{stream.tracks.length}</TableCell>
-                  <TableCell className={styles.dataCell}>{stream.readers.length}</TableCell>
                   <TableCell className={styles.dataCell}>
-                    <Text font="monospace" size={200} truncate className={styles.clippedText}>
-                      {formatByteRate(rates[stream.name]?.inboundBytesPerSecond)}
+                    {stream.tracks.length}
+                  </TableCell>
+                  <TableCell className={styles.dataCell}>
+                    {stream.readers.length}
+                  </TableCell>
+                  <TableCell className={styles.dataCell}>
+                    <Text
+                      font="monospace"
+                      size={200}
+                      truncate
+                      className={styles.clippedText}
+                    >
+                      {formatByteRate(
+                        rates[stream.name]?.inboundBytesPerSecond,
+                      )}
                     </Text>
                   </TableCell>
                   <TableCell className={styles.dataCell}>
-                    <Text font="monospace" size={200} truncate className={styles.clippedText}>
-                      {formatByteRate(rates[stream.name]?.outboundBytesPerSecond)}
+                    <Text
+                      font="monospace"
+                      size={200}
+                      truncate
+                      className={styles.clippedText}
+                    >
+                      {formatByteRate(
+                        rates[stream.name]?.outboundBytesPerSecond,
+                      )}
                     </Text>
                   </TableCell>
                   <TableCell className={styles.dataCell}>
-                    <StatusBadge status={isOnline ? 'online' : 'offline'} />
+                    <div className={styles.statusBadges}>
+                      <StatusBadge status={isOnline ? "online" : "offline"} />
+                      <RecordingStatusBadge isRecording={isRecording} />
+                    </div>
                   </TableCell>
-                  <TableCell className={mergeClasses(styles.dataCell, styles.actionsCell)}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.actionsCell,
+                    )}
+                  >
                     <div className={styles.actions}>
                       <Button
                         size="small"
@@ -306,11 +387,42 @@ export default function StreamTable({
                       />
                       <Button
                         size="small"
-                        icon={<AddSquareRegular style={smallIconStyle} />}
+                        icon={<AppsAddInRegular style={smallIconStyle} />}
                         aria-label={`Add ${stream.name} to grid`}
                         title="Add to Grid"
                         onClick={() => onAddToGrid(stream)}
                       />
+                      <Button
+                        size="small"
+                        icon={
+                          isRecording ? (
+                            <StopFilled
+                              style={{
+                                fontSize: 14,
+                                color: "#d13438",
+                              }}
+                            />
+                          ) : (
+                            <RecordRegular style={smallIconStyle} />
+                          )
+                        }
+                        aria-label={`${recordingTitle} ${stream.name}`}
+                        title={recordingTitle}
+                        disabled={recordingActionPending}
+                        onClick={() => onToggleRecording(stream)}
+                      />
+
+                      {sourceKickTarget && (
+                        <Button
+                          size="small"
+                          icon={
+                            <PlugDisconnected20Regular style={smallIconStyle} />
+                          }
+                          aria-label={`Kick source for ${stream.name}`}
+                          title="Kick source"
+                          onClick={() => onKickSource(stream)}
+                        />
+                      )}
                       <Button
                         size="small"
                         icon={<InfoRegular style={smallIconStyle} />}
@@ -318,16 +430,8 @@ export default function StreamTable({
                         title="View details"
                         onClick={() => onDetails(stream)}
                       />
-                      {sourceKickTarget && (
-                        <Button
-                          size="small"
-                          icon={<PlugDisconnected20Regular style={smallIconStyle} />}
-                          aria-label={`Kick source for ${stream.name}`}
-                          title="Kick source"
-                          onClick={() => onKickSource(stream)}
-                        />
-                      )}
-                      {stream.isConfigured && (
+
+                      {/* {stream.isConfigured && (
                         <Button
                           size="small"
                           icon={<EditRegular style={smallIconStyle} />}
@@ -344,7 +448,7 @@ export default function StreamTable({
                           title="Delete stream"
                           onClick={() => onDelete(stream)}
                         />
-                      )}
+                      )} */}
                     </div>
                   </TableCell>
                 </TableRow>

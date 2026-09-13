@@ -21,7 +21,9 @@ import { useStoreBackedPathDetail } from '@src/hooks/useMediaMTXApi';
 import type { PathItem } from '@src/types/stream';
 import { formatByteRate } from '@src/utils/formatters';
 import { usePathTransferRate } from '@src/hooks/useTransferRates';
+import RecordingStatusBadge from '@src/components/common/RecordingStatusBadge';
 import StatusBadge from '@src/components/common/StatusBadge';
+import { isStreamRecordingEnabled } from '@src/utils/recordingStatus';
 import { isStreamOnline } from '@src/utils/streamStatus';
 import { getDisplayProtocol } from '@src/utils/streamDisplay';
 import type { ViewerDetailTarget } from '@src/utils/streamDisplay';
@@ -65,6 +67,12 @@ const useStyles = makeStyles({
   },
   sectionContent: {
     marginTop: tokens.spacingVerticalXXS,
+  },
+  statusBadges: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXXS,
+    flexWrap: 'wrap',
   },
   muted: {
     color: tokens.colorNeutralForeground3,
@@ -119,6 +127,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
   }, [stream?.name, isOpen]);
 
   const isOnline = stream ? isStreamOnline(stream) : false;
+  const isRecording = stream ? isStreamRecordingEnabled(stream, pathDetailQuery.data) : false;
   const protocol = getDisplayProtocol(stream);
   const additionalStreamDetails = stream
     ? getAdditionalStreamDetails(stream, pathDetailQuery.data)
@@ -174,7 +183,10 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                 </DetailSection>
 
                 <DetailSection label="Status">
-                  <StatusBadge status={isOnline ? 'online' : 'offline'} />
+                  <div className={styles.statusBadges}>
+                    <StatusBadge status={isOnline ? 'online' : 'offline'} />
+                    <RecordingStatusBadge isRecording={isRecording} />
+                  </div>
                 </DetailSection>
 
                 <DetailSection label="Protocol">

@@ -20,17 +20,18 @@ import {
   SlideGrid20Filled,
   Settings24Regular,
   Video24Regular,
+  VideoClip24Regular,
 } from '@fluentui/react-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from '@src/components/common/ThemeToggle';
 import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
 import { usePlaybackSyncEndpoint } from '@src/hooks/usePlaybackSyncEndpoint';
-import { DASHBOARD_ROUTE, PLAYBACK_SYNC_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
+import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, PLAYBACK_SYNC_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
 import useAppStore from '@src/store/useAppStore';
 import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
 
-type NavTab = 'dashboard' | 'streams' | 'playback-sync';
+type NavTab = 'dashboard' | 'streams' | 'playback' | 'playback-sync';
 
 type SidebarNavItem = {
   id: NavTab;
@@ -51,6 +52,12 @@ const NAV_ITEMS: SidebarNavItem[] = [
     label: 'Streams',
     path: STREAMS_ROUTE,
     icon: <Video24Regular />,
+  },
+  {
+    id: 'playback',
+    label: 'Playback',
+    path: PLAYBACK_ROUTE,
+    icon: <VideoClip24Regular />,
   },
   {
     id: 'playback-sync',
@@ -203,6 +210,7 @@ const useStyles = makeStyles({
 
 export function pathToTab(pathname: string): NavTab {
   if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`)) return 'streams';
+  if (pathname === PLAYBACK_ROUTE || pathname.startsWith(`${PLAYBACK_ROUTE}/`)) return 'playback';
   if (pathname === PLAYBACK_SYNC_ROUTE || pathname.startsWith(`${PLAYBACK_SYNC_ROUTE}/`)) return 'playback-sync';
   return 'dashboard';
 }

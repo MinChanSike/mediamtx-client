@@ -4,6 +4,7 @@ import {
   Select,
   Tab,
   TabList,
+  Tooltip,
   makeStyles,
   mergeClasses,
   tokens,
@@ -134,16 +135,17 @@ export default function StreamFilterBar({
           aria-label="Grid layout size"
         >
           {GRID_LAYOUT_OPTIONS.map((option) => (
-            <Button
-              key={option}
-              aria-label={`Use ${option} grid layout`}
-              aria-pressed={gridLayout === option}
-              appearance={gridLayout === option ? 'primary' : 'subtle'}
-              icon={<GridLayoutIcon layout={option} />}
-              onClick={() => selectGridLayout(option)}
-              size="small"
-              className={styles.gridLayoutButton}
-            />
+            <Tooltip key={option} content={`${option} grid layout`} relationship="label">
+              <Button
+                aria-label={`Use ${option} grid layout`}
+                aria-pressed={gridLayout === option}
+                appearance={gridLayout === option ? 'primary' : 'subtle'}
+                icon={<GridLayoutIcon layout={option} />}
+                onClick={() => selectGridLayout(option)}
+                size="small"
+                className={styles.gridLayoutButton}
+              />
+            </Tooltip>
           ))}
         </div>
       )}

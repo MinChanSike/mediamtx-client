@@ -130,7 +130,7 @@ export async function getViewerDetail(
   );
 }
 
-export async function addPath(name: string, sourceUri: string): Promise<void> {
+export async function addPathConfig(name: string, config: Record<string, unknown>): Promise<void> {
   const baseUrl = useAppStore.getState().serverUrl;
   const url = `${baseUrl}/v3/config/paths/add/${encodeURIComponent(name)}`;
 
@@ -139,11 +139,15 @@ export async function addPath(name: string, sourceUri: string): Promise<void> {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ source: sourceUri }),
+    body: JSON.stringify(config),
   });
   if (!response.ok) {
     throw new ApiError(response.status, response.statusText);
   }
+}
+
+export async function addPath(name: string, sourceUri: string): Promise<void> {
+  await addPathConfig(name, { source: sourceUri });
 }
 
 export async function deletePath(name: string): Promise<void> {
@@ -159,7 +163,7 @@ export async function deletePath(name: string): Promise<void> {
   }
 }
 
-export async function patchPath(name: string, sourceUri: string): Promise<void> {
+export async function patchPathConfig(name: string, patch: Record<string, unknown>): Promise<void> {
   const baseUrl = useAppStore.getState().serverUrl;
   const url = `${baseUrl}/v3/config/paths/patch/${encodeURIComponent(name)}`;
 
@@ -168,12 +172,20 @@ export async function patchPath(name: string, sourceUri: string): Promise<void> 
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ source: sourceUri }),
+    body: JSON.stringify(patch),
   });
 
   if (!response.ok) {
     throw new ApiError(response.status, response.statusText);
   }
+}
+
+export async function patchPath(name: string, sourceUri: string): Promise<void> {
+  await patchPathConfig(name, { source: sourceUri });
+}
+
+export async function setPathRecording(name: string, record: boolean): Promise<void> {
+  await patchPathConfig(name, { record });
 }
 
 export async function kickPathTarget(target: KickTarget): Promise<void> {

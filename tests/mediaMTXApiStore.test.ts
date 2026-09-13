@@ -16,6 +16,7 @@ import {
   runDeleteStreamMutation,
   runEditStreamMutation,
   runKickStreamTargetMutation,
+  runToggleStreamRecordingMutation,
   useStoreBackedGlobalConfig,
   useStoreBackedPathDetail,
   useStoreBackedPaths,
@@ -75,10 +76,15 @@ function resetStores(serverUrl = 'http://mediamtx.test') {
   useMediaMTXApiStore.getState().resetForServerUrl(serverUrl);
 }
 
-function installApiMock(requests: string[], overrides: Record<string, Response | undefined> = {}) {
+function installApiMock(
+  requests: string[],
+  overrides: Record<string, Response | undefined> = {},
+  bodies: string[] = []
+) {
   globalThis.fetch = (async (input, init) => {
     const url = String(input);
     requests.push(`${init?.method ?? 'GET'} ${url}`);
+    if (typeof init?.body === 'string') bodies.push(init.body);
 
     if (overrides[url]) return overrides[url] as Response;
     if (url.endsWith('/v3/paths/list')) {
@@ -123,10 +129,10 @@ function installApiMock(requests: string[], overrides: Record<string, Response |
     if (url.endsWith('/v3/rtmpconns/get/viewer-1')) {
       return jsonResponse({ id: 'viewer-1', state: 'read' });
     }
-    if (url.endsWith('/v3/config/paths/add/camera-2')) {
+    if (url.includes('/v3/config/paths/add/')) {
       return new Response(null, { status: 204 });
     }
-    if (url.endsWith('/v3/config/paths/patch/camera-1')) {
+    if (url.includes('/v3/config/paths/patch/')) {
       return new Response(null, { status: 204 });
     }
     if (url.endsWith('/v3/config/paths/delete/camera-1')) {
@@ -983,6 +989,56 @@ describe('MediaMTX API Zustand store integration', () => {
     });
     expect(requests).toContain('POST http://mediamtx.test/v3/config/paths/add/camera-2');
     expect(requests.filter((request) => request.endsWith('/v3/paths/list'))).toHaveLength(2);
+  });
+
+  test('stream recording toggle adds ad-hoc config for runtime-only starts', async () => {
+    const requests: string[] = [];
+    const bodies: string[] = [];
+    resetStores();
+    installApiMock(requests, {}, bodies);
+    await refreshPathsNow();
+    await refreshGlobalConfigNow();
+    await refreshRawConfigNow();
+
+    useMediaMTXApiStore.getState().beginMutation('toggleStreamRecording');
+    expect(useMediaMTXApiStore.getState().mutations.toggleStreamRecording.isPending).toBe(true);
+
+    await runToggleStreamRecordingMutation({
+      pathName: 'camera/1',
+      record: true,
+      isConfigured: false,
+      sourceUri: null,
+    });
+    useMediaMTXApiStore.getState().setMutationSuccess('toggleStreamRecording');
+
+    expect(useMediaMTXApiStore.getState().mutations.toggleStreamRecording).toMatchObject({
+      isPending: false,
+      isError: false,
+      isSuccess: true,
+    });
+    expect(requests).toContain('POST http://mediamtx.test/v3/config/paths/add/camera%2F1');
+    expect(bodies).toContain(JSON.stringify({ source: 'publisher', record: true }));
+    expect(requests.filter((request) => request.endsWith('/v3/paths/list'))).toHaveLength(2);
+    expect(requests.filter((request) => request.endsWith('/v3/config/global/get'))).toHaveLength(4);
+    expect(requests.filter((request) => request.endsWith('/v3/config/pathdefaults/get'))).toHaveLength(2);
+  });
+
+  test('stream recording toggle patches configured paths when stopping recording', async () => {
+    const requests: string[] = [];
+    const bodies: string[] = [];
+    resetStores();
+    installApiMock(requests, {}, bodies);
+    await refreshPathsNow();
+
+    await runToggleStreamRecordingMutation({
+      pathName: 'camera/1',
+      record: false,
+      isConfigured: true,
+      sourceUri: 'rtsp://camera/1',
+    });
+
+    expect(requests).toContain('PATCH http://mediamtx.test/v3/config/paths/patch/camera%2F1');
+    expect(bodies).toContain(JSON.stringify({ record: false }));
   });
 
   test('stream add mutation refreshes mounted raw config after an initial error-only load', async () => {

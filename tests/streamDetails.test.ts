@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { getViewerDetail } from '../src/api/pathsApi';
 import useAppStore from '../src/store/useAppStore';
+import { isStreamRecordingEnabled } from '../src/utils/recordingStatus';
 import {
   DISPLAYED_STREAM_DETAIL_KEYS,
   VIEWER_TABLE_COLUMNS,
@@ -155,6 +156,14 @@ describe('Stream details primitive extraction', () => {
       { key: 'Available Time', value: 'not-a-date' },
       { key: 'Online Time', value: false },
     ]);
+  });
+
+  test('detects recording status from stream or fetched path detail fields', () => {
+    expect(isStreamRecordingEnabled({ record: true })).toBe(true);
+    expect(isStreamRecordingEnabled({ record: false }, { recordingStatus: 'active' })).toBe(true);
+    expect(isStreamRecordingEnabled({ recordingState: 'recording' })).toBe(true);
+    expect(isStreamRecordingEnabled({ record: false })).toBe(false);
+    expect(isStreamRecordingEnabled(null, ['unsupported'])).toBe(false);
   });
 
   test('treats arrays and null as unsupported detail records', () => {
@@ -393,6 +402,18 @@ describe('Stream details playback URLs tab', () => {
     expect(source).toContain("import PlaybackUrls from '@src/components/streams/PlaybackUrls'");
     expect(source).toContain("{selectedTab === 'playbackUrls' && <PlaybackUrls streamName={stream.name} />}");
     expect(source).not.toContain("{selectedTab === 'playbackUrls' && <></>}");
+  });
+});
+
+describe('Stream details recording status placement', () => {
+  test('shows recording status next to online or offline in the summary status section', async () => {
+    const source = await Bun.file('src/components/streams/StreamDetailsDrawer.tsx').text();
+
+    expect(source).toContain("import RecordingStatusBadge from '@src/components/common/RecordingStatusBadge';");
+    expect(source).toContain('const isRecording = stream ? isStreamRecordingEnabled(stream, pathDetailQuery.data) : false;');
+    expect(source).toContain('statusBadges: {');
+    expect(source).toContain("<StatusBadge status={isOnline ? 'online' : 'offline'} />");
+    expect(source).toContain('<RecordingStatusBadge isRecording={isRecording} />');
   });
 });
 
