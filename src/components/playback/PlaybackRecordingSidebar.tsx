@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ElementRef } from 'react';
 import {
   Button,
   Input,
@@ -9,6 +9,7 @@ import {
   mergeClasses,
   tokens,
 } from '@fluentui/react-components';
+import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
   ArrowClockwise16Regular,
   ChevronLeft16Regular,
@@ -19,6 +20,7 @@ import {
   VideoOff16Regular,
 } from '@fluentui/react-icons';
 import type { Recording } from '@src/schemas/recordingSchema';
+import { createPlaybackAssignmentDragData } from '@src/components/playback/playbackDragData';
 
 interface PlaybackRecordingSidebarProps {
   recordings: Recording[];
@@ -94,6 +96,11 @@ const useStyles = makeStyles({
     borderLeftWidth: 0,
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     textAlign: 'left',
+    cursor: 'grab',
+  },
+  draggingRecordingButton: {
+    cursor: 'grabbing',
+    opacity: 0.45,
   },
   recordingIcon: {
     flexShrink: 0,
@@ -177,6 +184,94 @@ function recordingDayLabel(selectedDay: string, isAvailable: boolean): string {
   return `${isAvailable ? 'Recorded' : 'No recorded'} ${date}`;
 }
 
+interface RegisterRecordingDraggableOptions {
+  element: ElementRef<'button'>;
+  recordingName: string;
+  setIsDragging: (isDragging: boolean) => void;
+}
+
+export function registerRecordingDraggable(
+  { element, recordingName, setIsDragging }: RegisterRecordingDraggableOptions,
+  register: typeof draggable = draggable
+) {
+  return register({
+    element,
+    getInitialData: () => createPlaybackAssignmentDragData(recordingName),
+    onDragStart: () => setIsDragging(true),
+    onDrop: () => setIsDragging(false),
+  });
+}
+
+interface RecordingListItemProps {
+  recording: Recording;
+  isAssigned: boolean;
+  isAvailable: boolean;
+  selectedDay: string;
+  onAssign: (path: string) => void;
+}
+
+function RecordingListItem({
+  recording,
+  isAssigned,
+  isAvailable,
+  selectedDay,
+  onAssign,
+}: RecordingListItemProps) {
+  const styles = useStyles();
+  const elementRef = useRef<ElementRef<'button'>>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    return registerRecordingDraggable({
+      element,
+      recordingName: recording.name,
+      setIsDragging,
+    });
+  }, [recording.name]);
+
+  return (
+    <Button
+      ref={elementRef}
+      className={mergeClasses(
+        styles.recordingButton,
+        isDragging && styles.draggingRecordingButton
+      )}
+      appearance={isAssigned ? 'secondary' : 'subtle'}
+      aria-disabled={isAssigned}
+      onClick={() => {
+        if (!isAssigned) onAssign(recording.name);
+      }}
+      aria-label={`${isAssigned ? 'Assigned' : 'Assign'} ${recording.name}`}
+    >
+      {isAvailable ? (
+        <VideoClipFilled
+          className={mergeClasses(styles.recordingIcon, styles.recordingIconAvailable)}
+        />
+      ) : (
+        <VideoClipOffFilled className={styles.recordingIcon} />
+      )}
+      <span className={styles.recordingCopy}>
+        <Text className={styles.recordingName} truncate>
+          {recording.name}
+        </Text>
+        <Text
+          className={mergeClasses(
+            styles.recordingMeta,
+            !isAvailable && styles.recordingMetaUnavailable
+          )}
+          size={200}
+          truncate
+        >
+          {recordingDayLabel(selectedDay, isAvailable)}
+        </Text>
+      </span>
+    </Button>
+  );
+}
+
 export default function PlaybackRecordingSidebar({
   recordings,
   assignedPaths,
@@ -255,45 +350,16 @@ export default function PlaybackRecordingSidebar({
             <Text size={100}>{recordings.length === 0 ? 'No recorded streams' : 'No matching streams'}</Text>
           </div>
         ) : (
-          visibleRecordings.map((recording) => {
-            const isAssigned = assignedPaths.has(recording.name);
-            const isAvailable = hasRecordingOnDay(recording, selectedDay);
-            return (
-              <Button
-                key={recording.name}
-                className={styles.recordingButton}
-                appearance={isAssigned ? 'secondary' : 'subtle'}
-                aria-disabled={isAssigned}
-                onClick={() => {
-                  if (!isAssigned) onAssign(recording.name);
-                }}
-                aria-label={`${isAssigned ? 'Assigned' : 'Assign'} ${recording.name}`}
-              >
-                {isAvailable ? (
-                  <VideoClipFilled
-                    className={mergeClasses(styles.recordingIcon, styles.recordingIconAvailable)}
-                  />
-                ) : (
-                  <VideoClipOffFilled className={styles.recordingIcon} />
-                )}
-                <span className={styles.recordingCopy}>
-                  <Text className={styles.recordingName} truncate>
-                    {recording.name}
-                  </Text>
-                  <Text
-                    className={mergeClasses(
-                      styles.recordingMeta,
-                      !isAvailable && styles.recordingMetaUnavailable
-                    )}
-                    size={200}
-                    truncate
-                  >
-                    {recordingDayLabel(selectedDay, isAvailable)}
-                  </Text>
-                </span>
-              </Button>
-            );
-          })
+          visibleRecordings.map((recording) => (
+            <RecordingListItem
+              key={recording.name}
+              recording={recording}
+              isAssigned={assignedPaths.has(recording.name)}
+              isAvailable={hasRecordingOnDay(recording, selectedDay)}
+              selectedDay={selectedDay}
+              onAssign={onAssign}
+            />
+          ))
         )}
       </div>
 

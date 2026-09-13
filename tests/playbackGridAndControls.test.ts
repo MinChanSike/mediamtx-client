@@ -172,14 +172,14 @@ describe('PlaybackControls transport actions', () => {
     expect(controller!.getPositionMs()).toBe(0);
   });
 
-  test('rate options update the store rate', async () => {
+  test('rate buttons update the store rate', async () => {
     const root = await renderControls();
 
-    const rateDropdown = root.find(
-      (node) => node.props['aria-label'] === 'Playback rate'
+    const rateButton = root.find(
+      (node) => node.type === 'button' && node.props['aria-label'] === 'Set playback rate 4x'
     );
     await act(async () => {
-      rateDropdown.props.onOptionSelect({}, { optionValue: '4' });
+      rateButton.props.onClick();
       await flushMicrotasks();
     });
     expect(usePlaybackStore.getState().rate).toBe(4);

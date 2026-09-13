@@ -7,14 +7,13 @@ import useAppStore from '@src/store/useAppStore';
 function ThemedApp() {
   const theme = useAppStore((s) => s.theme);
 
-  // Apply/remove 'dark' class on <html> so Tailwind dark: variants work
+  // Apply/remove 'dark' class on <html> so Tailwind dark: variants work, and
+  // sync color-scheme so native form controls (date/time picker indicators,
+  // scrollbars) render for the active theme.
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    root.classList.toggle('dark', theme === 'dark');
+    root.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
   }, [theme]);
 
   return (

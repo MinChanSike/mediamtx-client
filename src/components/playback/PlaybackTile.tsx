@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type ElementRef } from 'react';
 import {
   Badge,
   Button,
@@ -8,6 +8,7 @@ import {
   mergeClasses,
   tokens,
 } from '@fluentui/react-components';
+import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
   ArrowClockwise24Regular,
   CalendarEmpty24Regular,
@@ -23,6 +24,10 @@ import type {
 } from '@src/playback/recordedPlaybackController';
 import usePlaybackStore from '@src/store/usePlaybackStore';
 import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+import {
+  assignDroppedRecording,
+  isPlaybackAssignmentDragData,
+} from '@src/components/playback/playbackDragData';
 
 interface PlaybackTileProps {
   slot: number;
@@ -121,6 +126,10 @@ const useStyles = makeStyles({
     backgroundColor: '#000000',
     color: '#ffffff',
   },
+  dragOverTile: {
+    backgroundColor: tokens.colorBrandBackground2,
+    boxShadow: `inset 0 0 0 ${tokens.strokeWidthThick} ${tokens.colorBrandStroke1}`,
+  },
   bufferingBadge: {
     position: 'absolute',
     right: tokens.spacingHorizontalS,
@@ -157,10 +166,34 @@ function tileMessage(tile: TileSnapshot, slot: number): { title: string; detail:
   }
 }
 
+interface RegisterPlaybackDropTargetOptions {
+  element: ElementRef<'div'>;
+  slot: number;
+  setSlot: (slot: number, path: string | null) => void;
+  setIsDraggedOver: (isDraggedOver: boolean) => void;
+}
+
+export function registerPlaybackDropTarget(
+  { element, slot, setSlot, setIsDraggedOver }: RegisterPlaybackDropTargetOptions,
+  register: typeof dropTargetForElements = dropTargetForElements
+) {
+  return register({
+    element,
+    canDrop: ({ source }) => isPlaybackAssignmentDragData(source.data),
+    onDragEnter: () => setIsDraggedOver(true),
+    onDragLeave: () => setIsDraggedOver(false),
+    onDrop: ({ source }) => {
+      setIsDraggedOver(false);
+      assignDroppedRecording(source.data, slot, setSlot);
+    },
+  });
+}
+
 /**
  * One recorded-playback tile: a native `<video>` element driven by the grid
  * controller, with independent loading, gap, no-recording, decode-error and
- * retry states so a failing tile never disturbs the rest of the grid.
+ * retry states so a failing tile never disturbs the rest of the grid. Tiles
+ * accept dragged recordings from the sidebar to choose which cell plays them.
  */
 export default function PlaybackTile({
   slot,
@@ -173,10 +206,13 @@ export default function PlaybackTile({
   const styles = useStyles();
   const closeButtonStyles = useCloseButtonStyles();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
 
   const audioSlot = usePlaybackStore((s) => s.audioSlot);
   const setAudioSlot = usePlaybackStore((s) => s.setAudioSlot);
   const clearSlot = usePlaybackStore((s) => s.clearSlot);
+  const setSlot = usePlaybackStore((s) => s.setSlot);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -185,20 +221,21 @@ export default function PlaybackTile({
     return () => controller.detachVideo(slot);
   }, [controller, slot, path]);
 
-  if (!path) {
-    return (
-      <div className={styles.root} aria-label={`Playback slot ${slot + 1}, empty`}>
-        <div className={styles.stateLayer}>
-          <VideoOff16Regular />
-          <Text>Slot {slot + 1}</Text>
-          <Text>Assign a recorded path to start playback</Text>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) return;
 
-  const effectiveTile: TileSnapshot =
-    spansError && (!tile || tile.status === 'loading')
+    return registerPlaybackDropTarget({
+      element,
+      slot,
+      setSlot,
+      setIsDraggedOver,
+    });
+  }, [slot, setSlot]);
+
+  const effectiveTile: TileSnapshot | null = !path
+    ? null
+    : spansError && (!tile || tile.status === 'loading')
       ? {
           status: 'error',
           errorCode: 'network',
@@ -213,89 +250,105 @@ export default function PlaybackTile({
         });
 
   const showStateLayer =
+    effectiveTile !== null &&
     effectiveTile.status !== 'ready' &&
     effectiveTile.status !== 'loading' &&
     effectiveTile.status !== 'idle';
 
-  const message = tileMessage(effectiveTile, slot);
+  const message = effectiveTile ? tileMessage(effectiveTile, slot) : null;
   const isAudioSelected = audioSlot === slot;
 
   return (
     <div
-      className={mergeClasses(styles.root, styles.rootHoverOverlay)}
-      aria-label={`Playback slot ${slot + 1}, ${path}`}
+      ref={rootRef}
+      className={mergeClasses(
+        styles.root,
+        path !== null && styles.rootHoverOverlay,
+        isDraggedOver && styles.dragOverTile
+      )}
+      aria-label={`Playback slot ${slot + 1}${path ? `, ${path}` : ', empty'}`}
     >
-      <video
-        ref={videoRef}
-        playsInline
-        preload="auto"
-        className={styles.video}
-        data-playback-tile={slot}
-      />
-
-      {effectiveTile.status === 'loading' && (
-        <div className={mergeClasses(styles.stateLayer, styles.stateLayerDark)}>
-          <Spinner />
-          <Text>Loading recording…</Text>
-        </div>
-      )}
-
-      {showStateLayer && (
+      {path === null ? (
         <div className={styles.stateLayer}>
-          {effectiveTile.status === 'no-recording' ? (
-            <CalendarEmpty24Regular />
-          ) : (
-            <Warning24Regular />
-          )}
-          <Text weight="semibold">
-            {message.title}
-          </Text>
-          <Text>{message.detail}</Text>
-          {effectiveTile.status === 'error' && (
-            <Button
-              appearance="primary"
-              icon={<ArrowClockwise24Regular />}
-              onClick={() => controller.retryTile(slot)}
-            >
-              Retry
-            </Button>
-          )}
+          <VideoOff16Regular />
+          <Text>Slot {slot + 1}</Text>
+          <Text>Drag a recorded stream here to play</Text>
         </div>
-      )}
-
-      {effectiveTile.isBuffering && effectiveTile.status === 'ready' && (
-        <Badge appearance="filled" className={styles.bufferingBadge}>
-          Buffering
-        </Badge>
-      )}
-
-      <div className={mergeClasses('playback-tile-overlay', styles.overlay)}>
-        <div className={styles.title}>
-          <Text truncate className={styles.titleText}>
-            {path}
-          </Text>
-        </div>
-        <div className={styles.title}>
-          <Button
-            appearance="subtle"
-            className={styles.overlayButton}
-            icon={
-              isAudioSelected ? <SpeakerMute24Regular /> : <Speaker224Regular />
-            }
-            onClick={() => setAudioSlot(isAudioSelected ? null : slot)}
-            title={isAudioSelected ? 'Mute this tile' : 'Listen to this tile (mutes others)'}
-            aria-label={isAudioSelected ? `Mute tile ${slot + 1}` : `Listen to tile ${slot + 1}`}
+      ) : (
+        <>
+          <video
+            ref={videoRef}
+            playsInline
+            preload="auto"
+            className={styles.video}
+            data-playback-tile={slot}
           />
-          <Button
-            appearance="subtle"
-            className={mergeClasses(styles.overlayButton, closeButtonStyles.dangerHover)}
-            icon={<DismissRegular style={{ fontSize: 16 }} />}
-            onClick={() => clearSlot(slot)}
-            title="Remove from grid"
-            aria-label={`Remove tile ${slot + 1}`}
-          />
-        </div>
-      </div>
+
+          {effectiveTile?.status === 'loading' && (
+            <div className={mergeClasses(styles.stateLayer, styles.stateLayerDark)}>
+              <Spinner />
+              <Text>Loading recording…</Text>
+            </div>
+          )}
+
+          {showStateLayer && effectiveTile !== null && (
+            <div className={styles.stateLayer}>
+              {effectiveTile.status === 'no-recording' ? (
+                <CalendarEmpty24Regular />
+              ) : (
+                <Warning24Regular />
+              )}
+              <Text weight="semibold">
+                {message?.title}
+              </Text>
+              <Text>{message?.detail}</Text>
+              {effectiveTile.status === 'error' && (
+                <Button
+                  appearance="primary"
+                  icon={<ArrowClockwise24Regular />}
+                  onClick={() => controller.retryTile(slot)}
+                >
+                  Retry
+                </Button>
+              )}
+            </div>
+          )}
+
+          {effectiveTile?.isBuffering && effectiveTile.status === 'ready' && (
+            <Badge appearance="filled" className={styles.bufferingBadge}>
+              Buffering
+            </Badge>
+          )}
+
+          <div className={mergeClasses('playback-tile-overlay', styles.overlay)}>
+            <div className={styles.title}>
+              <Text truncate className={styles.titleText}>
+                {path}
+              </Text>
+            </div>
+            <div className={styles.title}>
+              <Button
+                appearance="subtle"
+                className={styles.overlayButton}
+                icon={
+                  isAudioSelected ? <SpeakerMute24Regular /> : <Speaker224Regular />
+                }
+                onClick={() => setAudioSlot(isAudioSelected ? null : slot)}
+                title={isAudioSelected ? 'Mute this tile' : 'Listen to this tile (mutes others)'}
+                aria-label={isAudioSelected ? `Mute tile ${slot + 1}` : `Listen to tile ${slot + 1}`}
+              />
+              <Button
+                appearance="subtle"
+                className={mergeClasses(styles.overlayButton, closeButtonStyles.dangerHover)}
+                icon={<DismissRegular style={{ fontSize: 16 }} />}
+                onClick={() => clearSlot(slot)}
+                title="Remove from grid"
+                aria-label={`Remove tile ${slot + 1}`}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

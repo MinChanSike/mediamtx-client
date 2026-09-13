@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import {
   Button,
-  Dropdown,
   Input,
   Label,
-  Option,
   Text,
+  Tooltip,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Pause24Regular, Play24Regular } from '@fluentui/react-icons';
+import {
+  ArrowForwardFilled,
+  Pause24Regular,
+  Play24Regular,
+} from '@fluentui/react-icons';
 import type { RecordedPlaybackController } from '@src/playback/recordedPlaybackController';
 import usePlaybackStore, {
   PLAYBACK_RATES,
@@ -65,19 +68,28 @@ const useStyles = makeStyles({
     },
   },
   transportButton: {
-    minWidth: '72px',
+    minWidth: '44px',
     '@media (max-width: 760px)': {
-      minWidth: '56px',
+      minWidth: '36px',
     },
+  },
+  playButton: {
+    width: '104px',
+    minWidth: '104px',
+  },
+  seekBackIcon: {
+    transform: 'scaleX(-1)',
   },
   rateGroup: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: tokens.spacingHorizontalXS,
   },
-  rateDropdown: {
-    minWidth: '76px',
-    width: '76px',
+  rateLabel: {
+    marginRight: tokens.spacingHorizontalS,
+  },
+  rateButton: {
+    minWidth: '36px',
   },
   timestampField: {
     flex: '0 1 128px',
@@ -146,16 +158,17 @@ export default function PlaybackControls({ controller }: PlaybackControlsProps) 
     <div className={styles.root} aria-label="Playback controls">
       <div className={styles.leadingSpacer} aria-hidden="true" />
       <div className={styles.transportGroup} role="group" aria-label="Transport">
+        <Tooltip content="Back 10 seconds" relationship="label">
+          <Button
+            className={styles.transportButton}
+            appearance="secondary"
+            icon={<ArrowForwardFilled className={styles.seekBackIcon} />}
+            onClick={() => controller.nudge(-10)}
+            aria-label="Seek back 10 seconds"
+          />
+        </Tooltip>
         <Button
-          className={styles.transportButton}
-          appearance="secondary"
-          onClick={() => controller.nudge(-10)}
-          aria-label="Seek back 10 seconds"
-        >
-          −10s
-        </Button>
-        <Button
-          className={styles.transportButton}
+          className={styles.playButton}
           appearance="primary"
           icon={isPlaying ? <Pause24Regular /> : <Play24Regular />}
           onClick={handleTogglePlay}
@@ -163,14 +176,15 @@ export default function PlaybackControls({ controller }: PlaybackControlsProps) 
         >
           {isPlaying ? 'Pause' : 'Play'}
         </Button>
-        <Button
-          className={styles.transportButton}
-          appearance="secondary"
-          onClick={() => controller.nudge(10)}
-          aria-label="Seek forward 10 seconds"
-        >
-          +10s
-        </Button>
+        <Tooltip content="Forward 10 seconds" relationship="label">
+          <Button
+            className={styles.transportButton}
+            appearance="secondary"
+            icon={<ArrowForwardFilled />}
+            onClick={() => controller.nudge(10)}
+            aria-label="Seek forward 10 seconds"
+          />
+        </Tooltip>
       </div>
 
       <Input
@@ -194,24 +208,21 @@ export default function PlaybackControls({ controller }: PlaybackControlsProps) 
 
       <div className={styles.trailingSpacer} aria-hidden="true" />
 
-      <div className={styles.rateGroup}>
-        <Label htmlFor="playback-rate">Rate</Label>
-        <Dropdown
-          id="playback-rate"
-          className={styles.rateDropdown}
-          value={formatRateLabel(rate)}
-          aria-label="Playback rate"
-          onOptionSelect={(_event, data) => {
-            const nextRate = Number(data.optionValue) as PlaybackRate;
-            setRate(nextRate);
-          }}
-        >
-          {PLAYBACK_RATES.map((option) => (
-            <Option key={option} value={String(option)}>
-              {formatRateLabel(option)}
-            </Option>
-          ))}
-        </Dropdown>
+      <div className={styles.rateGroup} role="group" aria-label="Playback rate">
+        <Label className={styles.rateLabel}>Rate</Label>
+        {PLAYBACK_RATES.map((option) => (
+          <Button
+            key={option}
+            size="small"
+            className={styles.rateButton}
+            appearance={rate === option ? 'primary' : 'secondary'}
+            aria-label={`Set playback rate ${formatRateLabel(option)}`}
+            aria-pressed={rate === option}
+            onClick={() => setRate(option)}
+          >
+            {formatRateLabel(option)}
+          </Button>
+        ))}
       </div>
 
       <Text size={100} className={styles.status}>

@@ -8,6 +8,7 @@ describe('playback reference layout contract', () => {
     const timeline = await Bun.file('src/components/playback/PlaybackTimeline.tsx').text();
     const controls = await Bun.file('src/components/playback/PlaybackControls.tsx').text();
     const grid = await Bun.file('src/components/playback/PlaybackGrid.tsx').text();
+    const tile = await Bun.file('src/components/playback/PlaybackTile.tsx').text();
 
     expect(page).toContain("height: '46px'");
     expect(page).toContain("height: 'calc(100vh - 40px)'");
@@ -24,6 +25,9 @@ describe('playback reference layout contract', () => {
     expect(grid).toContain("'1x2': { slotCount: 2, columns: 2 }");
     expect(grid).toContain('<GridLayoutIcon layout={option} />');
     expect(grid).toContain('bottom: \'100%\'');
+    expect(tile).toContain('Drag a recorded stream here to play');
+    expect(tile).toContain('registerPlaybackDropTarget');
+    expect(await Bun.file('src/components/playback/PlaybackSlotPicker.tsx').exists()).toBe(false);
 
     expect(rail).toContain("width: '220px'");
     expect(rail).not.toContain('Last recording');
@@ -50,9 +54,15 @@ describe('playback reference layout contract', () => {
     );
     expect(controls).not.toContain('label="Time"');
     expect(controls).toContain('aria-label="Seek to timestamp"');
+    expect(controls).toContain('ArrowForwardFilled');
+    expect(controls).toContain("transform: 'scaleX(-1)'");
+    expect(controls).toContain("minWidth: '44px'");
+    expect(controls).toContain('className={styles.playButton}');
+    expect(controls).toContain("width: '104px'");
     expect(controls).toContain('className={styles.rateGroup}');
     expect(controls).toContain('>Rate</Label>');
-    expect(controls).toContain("width: '76px'");
+    expect(controls).not.toContain('<Dropdown');
+    expect(controls).toContain('size="small"');
   });
 
   test('reports recording availability for the selected local day', () => {
