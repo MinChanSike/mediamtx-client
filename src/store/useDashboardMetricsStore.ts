@@ -4,6 +4,7 @@ import type { PathItem, PathList, Reader } from '@src/schemas/pathSchema';
 import type { GlobalConfig } from '@src/types/config';
 import { formatByteRate, formatUptime } from '@src/utils/formatters';
 import { sumTransferRates, type TransferRate } from '@src/utils/transferRates';
+import { isStreamRecordingEnabled } from '@src/utils/recordingStatus';
 import { isStreamOnline } from '@src/utils/streamStatus';
 
 export interface DashboardMetricCard {
@@ -20,6 +21,7 @@ export type InputProtocol = 'rtsp' | 'rtsps' | 'rtmp' | 'rtmps' | 'webrtc' | 'sr
 export interface DashboardMetrics {
   uptime: number;
   activePaths: number;
+  recordingStreams: number;
   inboundBytesPerSecond: number | null;
   outboundBytesPerSecond: number | null;
   ingressPartial: boolean;
@@ -72,6 +74,7 @@ export function calculateDashboardMetrics({
   const pathItems = paths?.items ?? [];
   const uptime = sanitizeCount(serverInfo?.uptime);
   const activePaths = pathItems.filter(isStreamOnline).length;
+  const recordingStreams = pathItems.filter((path) => isStreamRecordingEnabled(path)).length;
   const totals = sumTransferRates(pathItems, rates);
   const inboundBytesPerSecond = ratesStatus === 'fresh' ? totals.inbound.value : null;
   const outboundBytesPerSecond = ratesStatus === 'fresh' ? totals.outbound.value : null;
@@ -118,6 +121,7 @@ export function calculateDashboardMetrics({
   return {
     uptime,
     activePaths,
+    recordingStreams,
     inboundBytesPerSecond,
     outboundBytesPerSecond,
     ingressPartial,
@@ -141,6 +145,7 @@ export function calculateDashboardMetrics({
       {
         uptime,
         activePaths,
+        recordingStreams,
         inboundBytesPerSecond,
         outboundBytesPerSecond,
         ingressPartial,
@@ -194,53 +199,58 @@ function buildDashboardMetricCards(
       description: metrics.egressPartial ? 'Partial · Waiting for samples' : 'Sent by server',
     },
     {
+      label: 'Recording Streams',
+      value: metrics.recordingStreams,
+      description: 'Recording enabled streams',
+    },
+    {
       label: 'RTSP',
       value: metrics.rtspInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.rtspViewers,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'RTSPS',
       value: metrics.rtspsInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.rtspsViewers,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'RTMP',
       value: metrics.rtmpInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.rtmpViewers,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'RTMPS',
       value: metrics.rtmpsInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.rtmpsConnections,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'WebRTC',
       value: metrics.webRTCInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.webRTCViewers,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'SRT',
       value: metrics.srtInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.srtConnections,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'HLS',
       value: metrics.hlsInputs,
-      unit: 'in',
+      unit: 'IN',
       secondaryValue: metrics.hlsViewers,
-      secondaryUnit: 'out',
+      secondaryUnit: 'OUT',
     },
     {
       label: 'Total Readers',

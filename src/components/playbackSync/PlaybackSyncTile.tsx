@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ElementRef } from 'react';
+import { useEffect, useRef, useState, type ElementRef } from "react";
 import {
   Badge,
   Button,
@@ -7,27 +7,26 @@ import {
   makeStyles,
   mergeClasses,
   tokens,
-} from '@fluentui/react-components';
-import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+} from "@fluentui/react-components";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   ArrowClockwise24Regular,
   CalendarEmpty24Regular,
-  DismissRegular,
   Speaker224Regular,
   SpeakerMute24Regular,
   VideoOff16Regular,
   Warning24Regular,
-} from '@fluentui/react-icons';
+} from "@fluentui/react-icons";
 import type {
   RecordedPlaybackSyncController,
   TileSnapshot,
-} from '@src/playbackSync/recordedPlaybackSyncController';
-import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+} from "@src/playbackSync/recordedPlaybackSyncController";
+import usePlaybackSyncStore from "@src/store/usePlaybackSyncStore";
+import CloseButton from "@src/components/common/CloseButton";
 import {
   assignDroppedSyncRecording,
   isPlaybackSyncAssignmentDragData,
-} from '@src/components/playbackSync/playbackSyncDragData';
+} from "@src/components/playbackSync/playbackSyncDragData";
 
 interface PlaybackTileProps {
   slot: number;
@@ -40,142 +39,158 @@ interface PlaybackTileProps {
 
 const useStyles = makeStyles({
   root: {
-    position: 'relative',
-    display: 'flex',
+    position: "relative",
+    display: "flex",
     minWidth: 0,
     minHeight: 0,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
   },
   video: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
   },
   overlay: {
-    pointerEvents: 'auto',
-    position: 'absolute',
+    pointerEvents: "auto",
+    position: "absolute",
     top: 0,
     right: 0,
     left: 0,
     zIndex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalXS,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
     padding: `2px ${tokens.spacingHorizontalXS}`,
-    color: '#ffffff',
+    color: "#ffffff",
     opacity: 0,
     transitionDuration: tokens.durationNormal,
-    transitionProperty: 'opacity',
+    transitionProperty: "opacity",
     transitionTimingFunction: tokens.curveEasyEase,
-    ':hover': {
+    ":hover": {
       opacity: 1,
     },
   },
   rootHoverOverlay: {
-    ':hover': {
+    ":hover": {
       [`& .playback-tile-overlay`]: {
         opacity: 1,
       },
     },
   },
   title: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
-    alignItems: 'center',
+    alignItems: "center",
     gap: tokens.spacingHorizontalXS,
   },
   titleText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontFamily: tokens.fontFamilyMonospace,
   },
   overlayButton: {
-    pointerEvents: 'auto',
+    pointerEvents: "auto",
     flexShrink: 0,
-    minWidth: '32px',
-    width: '32px',
-    height: '32px',
+    minWidth: "32px",
+    width: "32px",
+    height: "32px",
     padding: 0,
-    color: '#ffffff',
-    ':hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    color: "#ffffff",
+    ":hover": {
+      backgroundColor: "rgba(255, 255, 255, 0.12)",
     },
-    ':hover:active': {
-      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    ":hover:active": {
+      backgroundColor: "rgba(255, 255, 255, 0.18)",
     },
   },
   stateLayer: {
-    position: 'absolute',
+    position: "absolute",
     inset: 0,
     zIndex: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
     gap: tokens.spacingVerticalS,
     padding: tokens.spacingHorizontalM,
-    textAlign: 'center',
+    textAlign: "center",
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground2,
   },
   stateLayerDark: {
-    backgroundColor: '#000000',
-    color: '#ffffff',
+    backgroundColor: "#000000",
+    color: "#ffffff",
+  },
+  stateLayerStreamName: {
+    maxWidth: "100%",
+    fontFamily: tokens.fontFamilyMonospace,
   },
   dragOverTile: {
     backgroundColor: tokens.colorBrandBackground2,
     boxShadow: `inset 0 0 0 ${tokens.strokeWidthThick} ${tokens.colorBrandStroke1}`,
   },
   bufferingBadge: {
-    position: 'absolute',
+    position: "absolute",
     right: tokens.spacingHorizontalS,
     bottom: tokens.spacingVerticalS,
     zIndex: 2,
-    display: 'flex',
-    alignItems: 'center',
+    display: "flex",
+    alignItems: "center",
     gap: tokens.spacingHorizontalXS,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    color: '#ffffff',
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
+    color: "#ffffff",
     padding: `2px ${tokens.spacingHorizontalXS}`,
   },
 });
 
-function tileMessage(tile: TileSnapshot, slot: number): { title: string; detail: string } {
+function tileMessage(
+  tile: TileSnapshot,
+  slot: number,
+): { title: string; detail: string } {
   switch (tile.status) {
-    case 'no-recording':
+    case "no-recording":
       return {
-        title: 'No recordings for this day',
-        detail: 'This path has no recorded footage on the selected day.',
+        title: "No recordings for this day",
+        detail: "This path has no recorded footage on the selected day.",
       };
-    case 'gap':
+    case "gap":
       return {
-        title: 'No footage at this time',
-        detail: 'The shared timestamp falls in a recording gap for this camera.',
+        title: "No footage at this time",
+        detail:
+          "The shared timestamp falls in a recording gap for this camera.",
       };
-    case 'error':
+    case "error":
       return {
-        title: tile.errorCode === 'endpoint' ? 'Playback server unavailable' : 'Tile failed',
-        detail: tile.errorMessage ?? 'The recording could not be played.',
+        title:
+          tile.errorCode === "endpoint"
+            ? "Playback server unavailable"
+            : "Tile failed",
+        detail: tile.errorMessage ?? "The recording could not be played.",
       };
     default:
-      return { title: `Slot ${slot + 1}`, detail: 'Loading recording…' };
+      return { title: `Slot ${slot + 1}`, detail: "Loading recording…" };
   }
 }
 
 interface RegisterPlaybackDropTargetOptions {
-  element: ElementRef<'div'>;
+  element: ElementRef<"div">;
   slot: number;
   setSlot: (slot: number, path: string | null) => void;
   setIsDraggedOver: (isDraggedOver: boolean) => void;
 }
 
 export function registerPlaybackSyncDropTarget(
-  { element, slot, setSlot, setIsDraggedOver }: RegisterPlaybackDropTargetOptions,
-  register: typeof dropTargetForElements = dropTargetForElements
+  {
+    element,
+    slot,
+    setSlot,
+    setIsDraggedOver,
+  }: RegisterPlaybackDropTargetOptions,
+  register: typeof dropTargetForElements = dropTargetForElements,
 ) {
   return register({
     element,
@@ -204,7 +219,6 @@ export default function PlaybackSyncTile({
   spansLoading,
 }: PlaybackTileProps) {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
   const videoRef = useRef<HTMLVideoElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
@@ -235,15 +249,16 @@ export default function PlaybackSyncTile({
 
   const effectiveTile: TileSnapshot | null = !path
     ? null
-    : spansError && (!tile || tile.status === 'loading')
+    : spansError && (!tile || tile.status === "loading")
       ? {
-          status: 'error',
-          errorCode: 'network',
-          errorMessage: 'Interval availability could not be loaded from the playback server.',
+          status: "error",
+          errorCode: "network",
+          errorMessage:
+            "Interval availability could not be loaded from the playback server.",
           isBuffering: false,
         }
       : (tile ?? {
-          status: spansLoading ? 'loading' : 'idle',
+          status: spansLoading ? "loading" : "idle",
           errorCode: null,
           errorMessage: null,
           isBuffering: false,
@@ -251,9 +266,9 @@ export default function PlaybackSyncTile({
 
   const showStateLayer =
     effectiveTile !== null &&
-    effectiveTile.status !== 'ready' &&
-    effectiveTile.status !== 'loading' &&
-    effectiveTile.status !== 'idle';
+    effectiveTile.status !== "ready" &&
+    effectiveTile.status !== "loading" &&
+    effectiveTile.status !== "idle";
 
   const message = effectiveTile ? tileMessage(effectiveTile, slot) : null;
   const isAudioSelected = audioSlot === slot;
@@ -264,9 +279,9 @@ export default function PlaybackSyncTile({
       className={mergeClasses(
         styles.root,
         path !== null && styles.rootHoverOverlay,
-        isDraggedOver && styles.dragOverTile
+        isDraggedOver && styles.dragOverTile,
       )}
-      aria-label={`Playback slot ${slot + 1}${path ? `, ${path}` : ', empty'}`}
+      aria-label={`Playback slot ${slot + 1}${path ? `, ${path}` : ", empty"}`}
     >
       {path === null ? (
         <div className={styles.stateLayer}>
@@ -284,8 +299,10 @@ export default function PlaybackSyncTile({
             data-playback-tile={slot}
           />
 
-          {effectiveTile?.status === 'loading' && (
-            <div className={mergeClasses(styles.stateLayer, styles.stateLayerDark)}>
+          {effectiveTile?.status === "loading" && (
+            <div
+              className={mergeClasses(styles.stateLayer, styles.stateLayerDark)}
+            >
               <Spinner />
               <Text>Loading recording…</Text>
             </div>
@@ -293,16 +310,17 @@ export default function PlaybackSyncTile({
 
           {showStateLayer && effectiveTile !== null && (
             <div className={styles.stateLayer}>
-              {effectiveTile.status === 'no-recording' ? (
+              {effectiveTile.status === "no-recording" ? (
                 <CalendarEmpty24Regular />
               ) : (
                 <Warning24Regular />
               )}
-              <Text weight="semibold">
-                {message?.title}
+              <Text className={styles.stateLayerStreamName} truncate>
+                {path}
               </Text>
+              <Text weight="semibold">{message?.title}</Text>
               <Text>{message?.detail}</Text>
-              {effectiveTile.status === 'error' && (
+              {effectiveTile.status === "error" && (
                 <Button
                   appearance="primary"
                   icon={<ArrowClockwise24Regular />}
@@ -314,13 +332,15 @@ export default function PlaybackSyncTile({
             </div>
           )}
 
-          {effectiveTile?.isBuffering && effectiveTile.status === 'ready' && (
+          {effectiveTile?.isBuffering && effectiveTile.status === "ready" && (
             <Badge appearance="filled" className={styles.bufferingBadge}>
               Buffering
             </Badge>
           )}
 
-          <div className={mergeClasses('playback-tile-overlay', styles.overlay)}>
+          <div
+            className={mergeClasses("playback-tile-overlay", styles.overlay)}
+          >
             <div className={styles.title}>
               <Text truncate className={styles.titleText}>
                 {path}
@@ -331,16 +351,27 @@ export default function PlaybackSyncTile({
                 appearance="subtle"
                 className={styles.overlayButton}
                 icon={
-                  isAudioSelected ? <SpeakerMute24Regular /> : <Speaker224Regular />
+                  isAudioSelected ? (
+                    <SpeakerMute24Regular />
+                  ) : (
+                    <Speaker224Regular />
+                  )
                 }
                 onClick={() => setAudioSlot(isAudioSelected ? null : slot)}
-                title={isAudioSelected ? 'Mute this tile' : 'Listen to this tile (mutes others)'}
-                aria-label={isAudioSelected ? `Mute tile ${slot + 1}` : `Listen to tile ${slot + 1}`}
+                title={
+                  isAudioSelected
+                    ? "Mute this tile"
+                    : "Listen to this tile (mutes others)"
+                }
+                aria-label={
+                  isAudioSelected
+                    ? `Mute tile ${slot + 1}`
+                    : `Listen to tile ${slot + 1}`
+                }
               />
-              <Button
-                appearance="subtle"
-                className={mergeClasses(styles.overlayButton, closeButtonStyles.dangerHover)}
-                icon={<DismissRegular style={{ fontSize: 16 }} />}
+              <CloseButton
+                size="small"
+                className={styles.overlayButton}
                 onClick={() => clearSlot(slot)}
                 title="Remove from grid"
                 aria-label={`Remove tile ${slot + 1}`}

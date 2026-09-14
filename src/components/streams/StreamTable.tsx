@@ -9,6 +9,7 @@ import {
   TableHeaderCell,
   TableRow,
   Text,
+  Tooltip,
   makeStyles,
   mergeClasses,
   tokens,
@@ -18,8 +19,8 @@ import {
   ArrowSortRegular,
   ArrowSortDownRegular,
   ArrowSortUpRegular,
-  // DeleteRegular,
-  // EditRegular,
+  DeleteRegular,
+  EditRegular,
   InfoRegular,
   PlayRegular,
   PlugDisconnected20Regular,
@@ -90,14 +91,36 @@ const useStyles = makeStyles({
     overflowY: "auto",
   },
   table: {
+    display: "grid",
     minWidth: "1160px",
-    tableLayout: "fixed",
+    gridTemplateColumns:
+      "minmax(280px, 2fr) repeat(6, minmax(112px, 1fr)) max-content",
+  },
+  rowGroup: {
+    display: "grid",
+    gridColumn: "1 / -1",
+    gridTemplateColumns: "subgrid",
+  },
+  tableRow: {
+    display: "grid",
+    gridColumn: "1 / -1",
+    gridTemplateColumns: "subgrid",
+    alignItems: "center",
   },
   headerCell: {
     position: "sticky",
     top: 0,
     zIndex: 1,
+    display: "flex",
+    alignItems: "center",
+    minHeight: "32px",
     backgroundColor: tokens.colorNeutralBackground1,
+  },
+  nameCell: {
+    minWidth: 0,
+  },
+  standardCell: {
+    minWidth: 0,
   },
   sortButton: {
     height: "28px",
@@ -108,6 +131,9 @@ const useStyles = makeStyles({
     fontWeight: tokens.fontWeightSemibold,
   },
   dataCell: {
+    display: "flex",
+    alignItems: "center",
+    minHeight: "34px",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -121,6 +147,9 @@ const useStyles = makeStyles({
   emptyCell: {
     color: tokens.colorNeutralForeground3,
   },
+  emptyRowCell: {
+    gridColumn: "1 / -1",
+  },
   statusBadges: {
     display: "inline-flex",
     alignItems: "center",
@@ -128,22 +157,69 @@ const useStyles = makeStyles({
     minWidth: 0,
   },
   actions: {
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     gap: tokens.spacingHorizontalXXS,
     whiteSpace: "nowrap",
   },
   actionsCellHeader: {
-    width: "auto",
-    minWidth: "248px",
-    "> div": { width: "auto", justifySelf: "center" },
+    justifyContent: "center",
+    textAlign: "center",
+    whiteSpace: "nowrap",
   },
   actionsCell: {
-    width: "auto",
-    minWidth: "248px",
+    justifyContent: "flex-start",
+    textAlign: "left",
+    whiteSpace: "nowrap",
   },
 });
+
+function StreamNameCell({ name }: { name: string }) {
+  const styles = useStyles();
+  const textRef = useRef<HTMLElement | null>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+
+    const updateTruncation = () => {
+      setIsTruncated(element.scrollWidth > element.clientWidth);
+    };
+
+    updateTruncation();
+
+    if (window.ResizeObserver) {
+      const observer = new window.ResizeObserver(updateTruncation);
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener("resize", updateTruncation);
+    return () => window.removeEventListener("resize", updateTruncation);
+  }, [name]);
+
+  const text = (
+    <Text
+      ref={textRef}
+      size={200}
+      weight="semibold"
+      truncate
+      className={styles.clippedText}
+    >
+      {name}
+    </Text>
+  );
+
+  if (!isTruncated) return text;
+
+  return (
+    <Tooltip content={name} relationship="label">
+      {text}
+    </Tooltip>
+  );
+}
 
 function compareStreams(a: PathItem, b: PathItem, column: SortColumn) {
   switch (column) {
@@ -167,8 +243,8 @@ export default function StreamTable({
   onDetails,
   onPlay,
   onAddToGrid,
-  // onEdit,
-  // onDelete,
+  onEdit,
+  onDelete,
   onKickSource,
   onToggleRecording,
   recordingActionPending = false,
@@ -274,13 +350,16 @@ export default function StreamTable({
         className={styles.table}
         size="small"
       >
-        <TableHeader>
-          <TableRow>
+        <TableHeader className={styles.rowGroup}>
+          <TableRow className={styles.tableRow}>
             {SORTABLE_COLUMNS.map((column) => (
               <TableHeaderCell
                 key={column.key}
                 aria-sort={sortColumn === column.key ? sortDirection : "none"}
-                className={styles.headerCell}
+                className={mergeClasses(
+                  styles.headerCell,
+                  column.key === "name" ? styles.nameCell : styles.standardCell,
+                )}
               >
                 <Button
                   appearance="transparent"
@@ -305,7 +384,7 @@ export default function StreamTable({
             </TableHeaderCell>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className={styles.rowGroup}>
           {sortedStreams.length > 0 ? (
             sortedStreams.map((stream) => {
               const protocol = getDisplayProtocol(stream);
@@ -318,29 +397,44 @@ export default function StreamTable({
               const sourceKickTarget = getSourceKickTarget(stream);
 
               return (
-                <TableRow key={stream.name}>
-                  <TableCell className={styles.dataCell}>
-                    <Text
-                      size={200}
-                      weight="semibold"
-                      truncate
-                      className={styles.clippedText}
-                    >
-                      {stream.name}
-                    </Text>
+                <TableRow key={stream.name} className={styles.tableRow}>
+                  <TableCell
+                    className={mergeClasses(styles.dataCell, styles.nameCell)}
+                  >
+                    <StreamNameCell name={stream.name} />
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     <Badge appearance="tint" size="small">
                       {formatProtocol(protocol)}
                     </Badge>
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     {stream.tracks.length}
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     {stream.readers.length}
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     <Text
                       font="monospace"
                       size={200}
@@ -352,7 +446,12 @@ export default function StreamTable({
                       )}
                     </Text>
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     <Text
                       font="monospace"
                       size={200}
@@ -364,7 +463,12 @@ export default function StreamTable({
                       )}
                     </Text>
                   </TableCell>
-                  <TableCell className={styles.dataCell}>
+                  <TableCell
+                    className={mergeClasses(
+                      styles.dataCell,
+                      styles.standardCell,
+                    )}
+                  >
                     <div className={styles.statusBadges}>
                       <StatusBadge status={isOnline ? "online" : "offline"} />
                       <RecordingStatusBadge isRecording={isRecording} />
@@ -408,7 +512,7 @@ export default function StreamTable({
                         }
                         aria-label={`${recordingTitle} ${stream.name}`}
                         title={recordingTitle}
-                        disabled={recordingActionPending}
+                        disabled={!isOnline || recordingActionPending}
                         onClick={() => onToggleRecording(stream)}
                       />
 
@@ -423,6 +527,15 @@ export default function StreamTable({
                           onClick={() => onKickSource(stream)}
                         />
                       )}
+                      {!sourceKickTarget && (
+                        <Button
+                          size="small"
+                          icon={<EditRegular style={smallIconStyle} />}
+                          aria-label={`Edit ${stream.name}`}
+                          title="Edit stream"
+                          onClick={() => onEdit(stream)}
+                        />
+                      )}
                       <Button
                         size="small"
                         icon={<InfoRegular style={smallIconStyle} />}
@@ -430,35 +543,26 @@ export default function StreamTable({
                         title="View details"
                         onClick={() => onDetails(stream)}
                       />
-
-                      {/* {stream.isConfigured && (
-                        <Button
-                          size="small"
-                          icon={<EditRegular style={smallIconStyle} />}
-                          aria-label={`Edit ${stream.name}`}
-                          title="Edit stream config"
-                          onClick={() => onEdit(stream)}
-                        />
-                      )}
-                      {stream.isConfigured && (
-                        <Button
-                          size="small"
-                          icon={<DeleteRegular style={smallIconStyle} />}
-                          aria-label={`Delete ${stream.name}`}
-                          title="Delete stream"
-                          onClick={() => onDelete(stream)}
-                        />
-                      )} */}
+                      <Button
+                        size="small"
+                        icon={<DeleteRegular style={smallIconStyle} />}
+                        aria-label={`Delete ${stream.name}`}
+                        title="Delete stream"
+                        onClick={() => onDelete(stream)}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
               );
             })
           ) : (
-            <TableRow>
-              <TableCell className={styles.emptyCell} colSpan={8}>
+            <TableRow className={styles.tableRow}>
+              <TableCell
+                className={mergeClasses(styles.emptyCell, styles.emptyRowCell)}
+                colSpan={8}
+              >
                 <Text weight="semibold">No streams found</Text>
-                <Text size={200}> Add a stream or adjust your filters</Text>
+                <Text size={200}>Add a stream or adjust your filters</Text>
               </TableCell>
             </TableRow>
           )}

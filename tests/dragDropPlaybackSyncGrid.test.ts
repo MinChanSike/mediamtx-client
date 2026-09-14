@@ -81,14 +81,14 @@ describe('playback grid drag integration', () => {
   });
 
   test('wires sidebar draggables and tile drop targets with visual feedback', () => {
-    expect(sidebarSource).toContain(
-      "from '@atlaskit/pragmatic-drag-and-drop/element/adapter'"
+    expect(sidebarSource).toMatch(
+      /from ["']@atlaskit\/pragmatic-drag-and-drop\/element\/adapter["']/
     );
     expect(sidebarSource).toContain('return registerRecordingDraggable({');
     expect(sidebarSource).toContain('recordingName: recording.name');
     expect(sidebarSource).toContain('onDragStart: () => setIsDragging(true)');
     expect(sidebarSource).toContain('styles.draggingRecordingButton');
-    expect(sidebarSource).toContain("cursor: 'grab'");
+    expect(sidebarSource).toMatch(/cursor: ["']grab["']/);
 
     expect(tileSource).toContain('return registerPlaybackSyncDropTarget({');
     expect(tileSource).toContain('canDrop: ({ source }) => isPlaybackSyncAssignmentDragData(source.data)');

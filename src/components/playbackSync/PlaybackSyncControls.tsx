@@ -26,6 +26,8 @@ import {
 
 interface PlaybackControlsProps {
   controller: RecordedPlaybackSyncController;
+  /** True when no streams are assigned to the grid. */
+  isDisabled: boolean;
 }
 
 const useStyles = makeStyles({
@@ -116,7 +118,7 @@ function formatRateLabel(rate: PlaybackRate): string {
  * (0.5x/1x/2x/4x) and direct timestamp entry, all acting on the shared
  * clock so every tile stays aligned.
  */
-export default function PlaybackSyncControls({ controller }: PlaybackControlsProps) {
+export default function PlaybackSyncControls({ controller, isDisabled }: PlaybackControlsProps) {
   const styles = useStyles();
 
   const isPlaying = usePlaybackSyncStore((s) => s.isPlaying);
@@ -163,6 +165,7 @@ export default function PlaybackSyncControls({ controller }: PlaybackControlsPro
             className={styles.transportButton}
             appearance="secondary"
             icon={<ArrowForwardFilled className={styles.seekBackIcon} />}
+            disabled={isDisabled}
             onClick={() => controller.nudge(-10)}
             aria-label="Seek back 10 seconds"
           />
@@ -171,6 +174,7 @@ export default function PlaybackSyncControls({ controller }: PlaybackControlsPro
           className={styles.playButton}
           appearance="primary"
           icon={isPlaying ? <Pause24Regular /> : <Play24Regular />}
+          disabled={isDisabled}
           onClick={handleTogglePlay}
           aria-label={isPlaying ? 'Pause playback' : 'Play playback'}
         >
@@ -181,6 +185,7 @@ export default function PlaybackSyncControls({ controller }: PlaybackControlsPro
             className={styles.transportButton}
             appearance="secondary"
             icon={<ArrowForwardFilled />}
+            disabled={isDisabled}
             onClick={() => controller.nudge(10)}
             aria-label="Seek forward 10 seconds"
           />
@@ -193,6 +198,7 @@ export default function PlaybackSyncControls({ controller }: PlaybackControlsPro
         className={styles.timestampField}
         input={{ className: styles.timestampInput }}
         aria-label="Seek to timestamp"
+        disabled={isDisabled}
         value={timestampDraft ?? displayTime}
         onFocus={() => setTimestampDraft(displayTime)}
         onChange={(_event, data) => setTimestampDraft(data.value)}
@@ -218,6 +224,7 @@ export default function PlaybackSyncControls({ controller }: PlaybackControlsPro
             appearance={rate === option ? 'primary' : 'secondary'}
             aria-label={`Set playback rate ${formatRateLabel(option)}`}
             aria-pressed={rate === option}
+            disabled={isDisabled}
             onClick={() => setRate(option)}
           >
             {formatRateLabel(option)}

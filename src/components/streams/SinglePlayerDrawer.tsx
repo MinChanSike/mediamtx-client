@@ -1,5 +1,4 @@
 import {
-  Button,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -8,8 +7,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+import CloseButton from '@src/components/common/CloseButton';
 import usePlayerStore from '@src/store/usePlayerStore';
 import VideoPlayer from '@src/components/streams/VideoPlayer';
 import PlaybackUrls from '@src/components/streams/PlaybackUrls';
@@ -62,7 +60,6 @@ export function getSinglePlayerMetrics(stream: PathItem, rate: TransferRate = UN
 
 export default function SinglePlayerDrawer() {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
   const drawerStream = usePlayerStore((s) => s.drawerStream);
   const rate = usePathTransferRate(drawerStream?.name);
   const isDrawerOpen = usePlayerStore((s) => s.isDrawerOpen);
@@ -84,11 +81,8 @@ export default function SinglePlayerDrawer() {
       <DrawerHeader>
         <DrawerHeaderTitle
           action={
-            <Button
-              appearance="subtle"
+            <CloseButton
               aria-label="Close player"
-              className={closeButtonStyles.dangerHover}
-              icon={<Dismiss24Regular />}
               onClick={handleClose}
             />
           }

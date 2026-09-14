@@ -68,12 +68,9 @@ describe('Stream table actions source contract', () => {
     expect(table).toContain('? "Stop recording"');
     expect(table).toContain(': "Start recording"');
     expect(table).toContain('aria-label={`${recordingTitle} ${stream.name}`}');
-    expect(table).toContain('disabled={recordingActionPending}');
-    expect(table).toContain('recordingActiveIcon: {');
-    expect(table).toContain("color: '#d13438'");
-    expect(table).toContain("animationIterationCount: 'infinite'");
-    expect(table).toContain('const recordingIconClassName = isRecording ? styles.recordingActiveIcon : undefined;');
-    expect(table).toContain('className={recordingIconClassName}');
+    expect(table).toContain('disabled={!isOnline || recordingActionPending}');
+    expect(table).toContain('StopFilled');
+    expect(table).toContain('color: "#d13438"');
     expect(triggerStart).toBeGreaterThan(-1);
     expect(triggerEnd).toBeGreaterThan(triggerStart);
     expect(table.slice(triggerStart, triggerEnd)).not.toContain('recordingMutation.mutate');
@@ -96,6 +93,35 @@ describe('Stream table actions source contract', () => {
     expect(page.slice(dialogStart, dialogEnd)).toContain('Start recording stream');
     expect(page.slice(dialogStart, dialogEnd)).toContain('Stop recording stream');
     expect(page.slice(dialogStart, dialogEnd)).toContain('handleConfirmToggleRecording');
+  });
+
+  test('widens stream names while keeping non-name and non-actions columns equal width', () => {
+    const table = source('src/components/streams/StreamTable.tsx');
+
+    expect(table).toContain('Tooltip,');
+    expect(table).toContain('function StreamNameCell({ name }: { name: string })');
+    expect(table).toContain('element.scrollWidth > element.clientWidth');
+    expect(table).toContain('<Tooltip content={name} relationship="label">');
+    expect(table).toContain('table: {');
+    expect(table).toContain('display: "grid"');
+    expect(table).toContain('gridTemplateColumns: "minmax(280px, 2fr) repeat(6, minmax(112px, 1fr)) max-content"');
+    expect(table).toContain('rowGroup: {');
+    expect(table).toContain('gridTemplateColumns: "subgrid"');
+    expect(table).toContain('<TableHeader className={styles.rowGroup}>');
+    expect(table).toContain('<TableBody className={styles.rowGroup}>');
+    expect(table).toContain('nameCell: {');
+    expect(table).toContain('standardCell: {');
+    expect(table).toContain('column.key === "name" ? styles.nameCell : styles.standardCell');
+    expect(table).toContain('<StreamNameCell name={stream.name} />');
+    expect(table.match(/styles\.standardCell/g)?.length).toBeGreaterThanOrEqual(7);
+    expect(table).toContain('actionsCellHeader: {');
+    expect(table).toContain('textAlign: "center"');
+    expect(table).toContain('display: "inline-flex"');
+    expect(table).toContain('actionsCell: {');
+    expect(table).toContain('textAlign: "left"');
+    expect(table).toContain('justifyContent: "flex-start"');
+    expect(table).toContain('alignItems: "center"');
+    expect(table).not.toContain('compactCountCell');
   });
 
   test('shows recording status next to online or offline in the Status column', () => {
@@ -129,11 +155,13 @@ describe('Stream table actions source contract', () => {
     expect(viewerList).toContain('No active readers');
   });
 
-  test('keeps Stream Table edit and delete controls gated by isConfigured', () => {
+  test('renders Stream Table edit and delete controls for every stream', () => {
     const table = source('src/components/streams/StreamTable.tsx');
 
-    expect(table.match(/\{stream\.isConfigured && \(/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(table).not.toContain('{stream.isConfigured && !isOnline && (');
     expect(table).toContain('aria-label={`Edit ${stream.name}`}');
+    expect(table).toContain('onClick={() => onEdit(stream)}');
     expect(table).toContain('aria-label={`Delete ${stream.name}`}');
+    expect(table).toContain('onClick={() => onDelete(stream)}');
   });
 });

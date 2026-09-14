@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Button,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -9,8 +8,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+import CloseButton from '@src/components/common/CloseButton';
 import type { PathItem } from '@src/types/stream';
 import type { ViewerDetailTarget } from '@src/utils/streamDisplay';
 import type { ViewerTableRow } from '@src/utils/streamDetails';
@@ -36,7 +34,6 @@ const useStyles = makeStyles({
 
 export default function StreamReadersDrawer({ stream, isOpen, onClose }: StreamReadersDrawerProps) {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
   const [selectedViewerTarget, setSelectedViewerTarget] = useState<ViewerDetailTarget | null>(null);
 
   useEffect(() => {
@@ -61,11 +58,8 @@ export default function StreamReadersDrawer({ stream, isOpen, onClose }: StreamR
         <DrawerHeader>
           <DrawerHeaderTitle
             action={
-              <Button
-                appearance="subtle"
+              <CloseButton
                 aria-label="Close readers"
-                className={closeButtonStyles.dangerHover}
-                icon={<Dismiss24Regular />}
                 onClick={onClose}
               />
             }

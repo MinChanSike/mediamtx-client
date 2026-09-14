@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   Badge,
-  Button,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -14,29 +13,28 @@ import {
   tokens,
   type SelectTabData,
   type SelectTabEvent,
-} from '@fluentui/react-components';
-import { Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
-import { useStoreBackedPathDetail } from '@src/hooks/useMediaMTXApi';
-import type { PathItem } from '@src/types/stream';
-import { formatByteRate } from '@src/utils/formatters';
-import { usePathTransferRate } from '@src/hooks/useTransferRates';
-import RecordingStatusBadge from '@src/components/common/RecordingStatusBadge';
-import StatusBadge from '@src/components/common/StatusBadge';
-import { isStreamRecordingEnabled } from '@src/utils/recordingStatus';
-import { isStreamOnline } from '@src/utils/streamStatus';
-import { getDisplayProtocol } from '@src/utils/streamDisplay';
-import type { ViewerDetailTarget } from '@src/utils/streamDisplay';
-import StreamReaderList from '@src/components/streams/StreamReaderList';
-import ViewerDetailsDrawer from '@src/components/streams/ViewerDetailsDrawer';
-import PlaybackUrls from '@src/components/streams/PlaybackUrls';
+} from "@fluentui/react-components";
+import CloseButton from "@src/components/common/CloseButton";
+import { useStoreBackedPathDetail } from "@src/hooks/useMediaMTXApi";
+import type { PathItem } from "@src/types/stream";
+import { formatByteRate } from "@src/utils/formatters";
+import { usePathTransferRate } from "@src/hooks/useTransferRates";
+import RecordingStatusBadge from "@src/components/common/RecordingStatusBadge";
+import StatusBadge from "@src/components/common/StatusBadge";
+import { isStreamRecordingEnabled } from "@src/utils/recordingStatus";
+import { isStreamOnline } from "@src/utils/streamStatus";
+import { getDisplayProtocol } from "@src/utils/streamDisplay";
+import type { ViewerDetailTarget } from "@src/utils/streamDisplay";
+import StreamReaderList from "@src/components/streams/StreamReaderList";
+import ViewerDetailsDrawer from "@src/components/streams/ViewerDetailsDrawer";
+import PlaybackUrls from "@src/components/streams/PlaybackUrls";
 import {
   getAdditionalStreamDetails,
   getPrimitiveDetails,
   getSourceIdentityDetails,
   getSourcePrimitiveDetails,
   type ViewerTableRow,
-} from '@src/utils/streamDetails';
+} from "@src/utils/streamDetails";
 
 interface StreamDetailsDrawerProps {
   stream: PathItem | null;
@@ -46,48 +44,48 @@ interface StreamDetailsDrawerProps {
 
 const useStyles = makeStyles({
   body: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalM,
   },
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: tokens.spacingVerticalM,
   },
   tabs: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalM,
   },
   tabLabel: {
-    display: 'inline-flex',
-    alignItems: 'center',
+    display: "inline-flex",
+    alignItems: "center",
     gap: tokens.spacingHorizontalXS,
   },
   sectionContent: {
     marginTop: tokens.spacingVerticalXXS,
   },
   statusBadges: {
-    display: 'inline-flex',
-    alignItems: 'center',
+    display: "inline-flex",
+    alignItems: "center",
     gap: tokens.spacingHorizontalXXS,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   muted: {
     color: tokens.colorNeutralForeground3,
   },
   list: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalS,
     margin: 0,
     padding: 0,
-    listStyleType: 'none',
+    listStyleType: "none",
   },
   detailRow: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
     padding: tokens.spacingVerticalS,
     borderRadius: tokens.borderRadiusSmall,
@@ -95,13 +93,19 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
   },
   breakAll: {
-    overflowWrap: 'anywhere',
+    overflowWrap: "anywhere",
   },
 });
 
-type StreamDetailsTab = 'source' | 'viewers' | 'playbackUrls';
+type StreamDetailsTab = "source" | "viewers" | "playbackUrls";
 
-function DetailSection({ label, children }: { label: string; children: ReactNode }) {
+function DetailSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   const styles = useStyles();
 
   return (
@@ -114,20 +118,29 @@ function DetailSection({ label, children }: { label: string; children: ReactNode
   );
 }
 
-export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamDetailsDrawerProps) {
+export default function StreamDetailsDrawer({
+  stream,
+  isOpen,
+  onClose,
+}: StreamDetailsDrawerProps) {
   const rate = usePathTransferRate(stream?.name);
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
-  const [selectedTab, setSelectedTab] = useState<StreamDetailsTab>('source');
-  const [selectedViewerTarget, setSelectedViewerTarget] = useState<ViewerDetailTarget | null>(null);
-  const pathDetailQuery = useStoreBackedPathDetail(stream?.name, isOpen && !!stream?.name);
+  const [selectedTab, setSelectedTab] = useState<StreamDetailsTab>("source");
+  const [selectedViewerTarget, setSelectedViewerTarget] =
+    useState<ViewerDetailTarget | null>(null);
+  const pathDetailQuery = useStoreBackedPathDetail(
+    stream?.name,
+    isOpen && !!stream?.name,
+  );
 
   useEffect(() => {
     setSelectedViewerTarget(null);
   }, [stream?.name, isOpen]);
 
   const isOnline = stream ? isStreamOnline(stream) : false;
-  const isRecording = stream ? isStreamRecordingEnabled(stream, pathDetailQuery.data) : false;
+  const isRecording = stream
+    ? isStreamRecordingEnabled(stream, pathDetailQuery.data)
+    : false;
   const protocol = getDisplayProtocol(stream);
   const additionalStreamDetails = stream
     ? getAdditionalStreamDetails(stream, pathDetailQuery.data)
@@ -144,7 +157,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
 
   function handleSelectViewer(row: ViewerTableRow) {
     if (!row.detailTarget) return;
-    setSelectedTab('viewers');
+    setSelectedTab("viewers");
     setSelectedViewerTarget(row.detailTarget);
   }
 
@@ -153,7 +166,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
       <OverlayDrawer
         open={isOpen && !!stream}
         position="end"
-        style={{ width: 420, maxWidth: '100vw' }}
+        style={{ width: 420, maxWidth: "100vw" }}
         onOpenChange={(_, data) => {
           if (!data.open) onClose();
         }}
@@ -161,11 +174,9 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
         <DrawerHeader>
           <DrawerHeaderTitle
             action={
-              <Button
-                appearance="subtle"
+              <CloseButton
+                size="small"
                 aria-label="Close details"
-                className={closeButtonStyles.dangerHover}
-                icon={<Dismiss24Regular />}
                 onClick={onClose}
               />
             }
@@ -184,7 +195,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
 
                 <DetailSection label="Status">
                   <div className={styles.statusBadges}>
-                    <StatusBadge status={isOnline ? 'online' : 'offline'} />
+                    <StatusBadge status={isOnline ? "online" : "offline"} />
                     <RecordingStatusBadge isRecording={isRecording} />
                   </div>
                 </DetailSection>
@@ -207,8 +218,16 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
               </div>
 
               <div className={styles.tabs}>
-                <TabList selectedValue={selectedTab} onTabSelect={handleTabSelect} size="small">
-                  <Tab id="stream-source-details-tab" value="source" className="!pl-0 !-ml-1">
+                <TabList
+                  selectedValue={selectedTab}
+                  onTabSelect={handleTabSelect}
+                  size="small"
+                >
+                  <Tab
+                    id="stream-source-details-tab"
+                    value="source"
+                    className="!pl-0 !-ml-1"
+                  >
                     Source Details
                   </Tab>
                   <Tab id="stream-playback-urls-tab" value="playbackUrls">
@@ -217,12 +236,14 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                   <Tab id="stream-viewers-tab" value="viewers">
                     <span className={styles.tabLabel}>
                       Readers
-                      {viewerCount > 0 && <Badge appearance="outline">{viewerCount}</Badge>}
+                      {viewerCount > 0 && (
+                        <Badge appearance="outline">{viewerCount}</Badge>
+                      )}
                     </span>
                   </Tab>
                 </TabList>
 
-                {selectedTab === 'source' && (
+                {selectedTab === "source" && (
                   <>
                     <DetailSection label="">
                       <ul className={styles.list}>
@@ -272,11 +293,17 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                               <Text>
                                 #{track.id} - {track.type}
                               </Text>
-                              {getPrimitiveDetails(track, ['id', 'type']).map(({ key, value }) => (
-                                <Text key={key} size={200} className={styles.muted}>
-                                  {key}: {String(value)}
-                                </Text>
-                              ))}
+                              {getPrimitiveDetails(track, ["id", "type"]).map(
+                                ({ key, value }) => (
+                                  <Text
+                                    key={key}
+                                    size={200}
+                                    className={styles.muted}
+                                  >
+                                    {key}: {String(value)}
+                                  </Text>
+                                ),
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -285,7 +312,9 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
 
                     <DetailSection label="">
                       {additionalStreamDetails.length === 0 ? (
-                        <Text className={styles.muted}>No additional details</Text>
+                        <Text className={styles.muted}>
+                          No additional details
+                        </Text>
                       ) : (
                         <ul className={styles.list}>
                           {additionalStreamDetails.map(({ key, value }) => (
@@ -301,7 +330,7 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                   </>
                 )}
 
-                {selectedTab === 'viewers' && (
+                {selectedTab === "viewers" && (
                   <DetailSection label="">
                     <StreamReaderList
                       readers={stream.readers}
@@ -310,7 +339,9 @@ export default function StreamDetailsDrawer({ stream, isOpen, onClose }: StreamD
                   </DetailSection>
                 )}
 
-                {selectedTab === 'playbackUrls' && <PlaybackUrls streamName={stream.name} />}
+                {selectedTab === "playbackUrls" && (
+                  <PlaybackUrls streamName={stream.name} />
+                )}
               </div>
             </div>
           </DrawerBody>

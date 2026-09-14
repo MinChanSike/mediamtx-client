@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageBar, MessageBarBody, makeStyles, tokens } from '@fluentui/react-components';
-import PageHeader from '@src/components/common/PageHeader';
-import PlaybackFileList from '@src/components/playback/PlaybackFileList';
-import PlaybackSeekBar from '@src/components/playback/PlaybackSeekBar';
-import PlaybackStreamList from '@src/components/playback/PlaybackStreamList';
-import PlaybackToolbar from '@src/components/playback/PlaybackToolbar';
-import PlaybackViewer from '@src/components/playback/PlaybackViewer';
-import { usePlaybackSyncEndpoint } from '@src/hooks/usePlaybackSyncEndpoint';
-import { usePlaybackStreams } from '@src/hooks/usePlaybackStreams';
-import { useRecordedFiles } from '@src/hooks/useRecordedFiles';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  MessageBar,
+  MessageBarBody,
+  makeStyles,
+  tokens,
+} from "@fluentui/react-components";
+import PageHeader from "@src/components/common/PageHeader";
+import PlaybackFileList from "@src/components/playback/PlaybackFileList";
+import PlaybackSeekBar from "@src/components/playback/PlaybackSeekBar";
+import PlaybackStreamList from "@src/components/playback/PlaybackStreamList";
+import PlaybackToolbar from "@src/components/playback/PlaybackToolbar";
+import PlaybackViewer from "@src/components/playback/PlaybackViewer";
+import { usePlaybackSyncEndpoint } from "@src/hooks/usePlaybackSyncEndpoint";
+import { usePlaybackStreams } from "@src/hooks/usePlaybackStreams";
+import { useRecordedFiles } from "@src/hooks/useRecordedFiles";
 import {
   MAX_FILE_WINDOW_MS,
   WINDOW_ROLLOVER_MARGIN_MS,
@@ -17,58 +22,57 @@ import {
   findAdjacentFile,
   recordedFileKey,
   type RecordedFile,
-} from '@src/api/playbackApi';
-import usePlaybackStore from '@src/store/usePlaybackStore';
+} from "@src/api/playbackApi";
+import usePlaybackStore from "@src/store/usePlaybackStore";
 
 const useStyles = makeStyles({
   root: {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    height: 'calc(100vh - 40px)',
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    height: "calc(100vh - 40px)",
     minHeight: 0,
     minWidth: 0,
-    gap: tokens.spacingVerticalM,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   workspace: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
     minHeight: 0,
     flex: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   stage: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
     minHeight: 0,
     flex: 1,
-    flexDirection: 'column',
-    overflow: 'hidden',
+    flexDirection: "column",
+    overflow: "hidden",
   },
   noticeStack: {
-    position: 'absolute',
-    top: '40px',
+    position: "absolute",
+    top: "40px",
     right: 0,
-    left: '448px',
+    left: "448px",
     zIndex: 5,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
-    pointerEvents: 'none',
-    '@media (max-width: 900px)': {
-      left: '360px',
+    pointerEvents: "none",
+    "@media (max-width: 900px)": {
+      left: "360px",
     },
   },
   notice: {
-    pointerEvents: 'auto',
+    pointerEvents: "auto",
   },
 });
 
 function buildDownloadFileName(streamName: string, file: RecordedFile): string {
-  const safeStream = streamName.replace(/[^a-zA-Z0-9._-]+/g, '_');
-  return `${safeStream}_${file.startIso.replace(/[:.]/g, '-')}.mp4`;
+  const safeStream = streamName.replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return `${safeStream}_${file.startIso.replace(/[:.]/g, "-")}.mp4`;
 }
 
 /**
@@ -100,8 +104,8 @@ export default function PlaybackPage() {
   const shouldAutoStartRef = useRef(false);
 
   const filesResult = useRecordedFiles(
-    endpoint.status === 'ready' ? endpoint.baseUrl : null,
-    selectedStream
+    endpoint.status === "ready" ? endpoint.baseUrl : null,
+    selectedStream,
   );
 
   // Select the first stream once the catalog loads so the files column is
@@ -115,14 +119,19 @@ export default function PlaybackPage() {
   // Drop a selected file that no longer exists after a catalog refresh.
   useEffect(() => {
     if (selectedKey === null || filesResult.isLoading) return;
-    if (filesResult.files.length > 0 && !filesResult.files.some((f) => recordedFileKey(f) === selectedKey)) {
+    if (
+      filesResult.files.length > 0 &&
+      !filesResult.files.some((f) => recordedFileKey(f) === selectedKey)
+    ) {
       setSelectedKey(null);
     }
   }, [selectedKey, filesResult.files, filesResult.isLoading]);
 
   const selectedFile = useMemo(
-    () => filesResult.files.find((file) => recordedFileKey(file) === selectedKey) ?? null,
-    [filesResult.files, selectedKey]
+    () =>
+      filesResult.files.find((file) => recordedFileKey(file) === selectedKey) ??
+      null,
+    [filesResult.files, selectedKey],
   );
 
   const sourceUrl = useMemo(
@@ -133,14 +142,22 @@ export default function PlaybackPage() {
             selectedStream,
             selectedFile,
             windowStartMs,
-            windowDurationMs
+            windowDurationMs,
           )
         : null,
-    [endpoint.baseUrl, selectedStream, selectedFile, windowStartMs, windowDurationMs]
+    [
+      endpoint.baseUrl,
+      selectedStream,
+      selectedFile,
+      windowStartMs,
+      windowDurationMs,
+    ],
   );
 
   const fullDurationMs =
-    sourceUrl === null ? 0 : Math.max(selectedFile?.durationMs ?? 0, measuredDurationMs);
+    sourceUrl === null
+      ? 0
+      : Math.max(selectedFile?.durationMs ?? 0, measuredDurationMs);
 
   // The rollover listener runs from a stable effect, so it reads the current
   // window through a ref instead of stale state closures.
@@ -165,25 +182,30 @@ export default function PlaybackPage() {
   const openWindowAt = useCallback((targetMs: number, autoStart: boolean) => {
     const { file, fileDurationMs } = windowRef.current;
     if (!file) return;
-    const boundedDuration = Math.max(1_000, Math.max(0, fileDurationMs - targetMs));
+    const boundedDuration = Math.max(
+      1_000,
+      Math.max(0, fileDurationMs - targetMs),
+    );
     const duration = Math.min(MAX_FILE_WINDOW_MS, boundedDuration);
-    const start = Math.max(0, Math.min(targetMs, Math.max(0, fileDurationMs - 1_000)));
+    const start = Math.max(
+      0,
+      Math.min(targetMs, Math.max(0, fileDurationMs - 1_000)),
+    );
     shouldAutoStartRef.current = shouldAutoStartRef.current || autoStart;
     setWindowStartMs(start);
     setWindowDurationMs(duration);
   }, []);
 
-  const selectFile = useCallback(
-    (file: RecordedFile, autoStart: boolean) => {
-      shouldAutoStartRef.current = autoStart;
-      setHasVideoError(false);
-      setMeasuredDurationMs(file.durationMs);
-      setWindowStartMs(0);
-      setWindowDurationMs(Math.min(MAX_FILE_WINDOW_MS, Math.max(1_000, file.durationMs)));
-      setSelectedKey(recordedFileKey(file));
-    },
-    []
-  );
+  const selectFile = useCallback((file: RecordedFile, autoStart: boolean) => {
+    shouldAutoStartRef.current = autoStart;
+    setHasVideoError(false);
+    setMeasuredDurationMs(file.durationMs);
+    setWindowStartMs(0);
+    setWindowDurationMs(
+      Math.min(MAX_FILE_WINDOW_MS, Math.max(1_000, file.durationMs)),
+    );
+    setSelectedKey(recordedFileKey(file));
+  }, []);
 
   const advanceFile = useCallback(
     (delta: 1 | -1) => {
@@ -191,7 +213,7 @@ export default function PlaybackPage() {
       const adjacent = findAdjacentFile(filesResult.files, selectedKey, delta);
       if (adjacent) selectFile(adjacent, true);
     },
-    [filesResult.files, selectedKey, selectedStream, selectFile]
+    [filesResult.files, selectedKey, selectedStream, selectFile],
   );
 
   const handleDownload = useCallback(
@@ -200,10 +222,11 @@ export default function PlaybackPage() {
       const url = buildFileDownloadUrl(endpoint.baseUrl, selectedStream, file);
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Download failed with ${response.status}`);
+        if (!response.ok)
+          throw new Error(`Download failed with ${response.status}`);
         const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
+        const anchor = document.createElement("a");
         anchor.href = objectUrl;
         anchor.download = buildDownloadFileName(selectedStream, file);
         document.body.appendChild(anchor);
@@ -211,10 +234,10 @@ export default function PlaybackPage() {
         anchor.remove();
         URL.revokeObjectURL(objectUrl);
       } catch {
-        window.open(url, '_blank', 'noopener');
+        window.open(url, "_blank", "noopener");
       }
     },
-    [endpoint.baseUrl, selectedStream]
+    [endpoint.baseUrl, selectedStream],
   );
 
   // Apply the persisted rate whenever it or the loaded file changes.
@@ -249,7 +272,9 @@ export default function PlaybackPage() {
       }
     };
     video.ondurationchange = () => {
-      const value = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : 0;
+      const value = Number.isFinite(video.duration)
+        ? Math.round(video.duration * 1000)
+        : 0;
       setMeasuredDurationMs((current) => Math.max(current, value));
     };
     video.onwaiting = () => setIsBuffering(true);
@@ -320,7 +345,10 @@ export default function PlaybackPage() {
     const { startMs, durationMs, fileDurationMs } = windowRef.current;
     if (!video || !sourceUrl || durationMs <= 0) return;
 
-    const clamped = Math.max(0, Math.min(targetMs, Math.max(0, fileDurationMs - 500)));
+    const clamped = Math.max(
+      0,
+      Math.min(targetMs, Math.max(0, fileDurationMs - 500)),
+    );
     const relativeMs = clamped - startMs;
     if (relativeMs >= 0 && relativeMs < durationMs) {
       const relativeSeconds = relativeMs / 1000;
@@ -354,7 +382,9 @@ export default function PlaybackPage() {
   };
 
   const selectedIndex = selectedFile
-    ? filesResult.files.findIndex((file) => recordedFileKey(file) === selectedKey)
+    ? filesResult.files.findIndex(
+        (file) => recordedFileKey(file) === selectedKey,
+      )
     : -1;
 
   return (
@@ -411,7 +441,9 @@ export default function PlaybackPage() {
             isDisabled={sourceUrl === null || hasVideoError}
             isPlaying={isPlaying}
             hasPreviousFile={selectedIndex > 0}
-            hasNextFile={selectedIndex >= 0 && selectedIndex < filesResult.files.length - 1}
+            hasNextFile={
+              selectedIndex >= 0 && selectedIndex < filesResult.files.length - 1
+            }
             rate={rate}
             onTogglePlay={togglePlay}
             onSeekRelative={seekRelative}
@@ -423,18 +455,18 @@ export default function PlaybackPage() {
       </div>
 
       <div className={styles.noticeStack}>
-        {endpoint.status === 'disabled' && (
+        {endpoint.status === "disabled" && (
           <MessageBar intent="warning" className={styles.notice}>
             <MessageBarBody>
               The playback server is disabled in the MediaMTX configuration.
             </MessageBarBody>
           </MessageBar>
         )}
-        {endpoint.status === 'invalid' && (
+        {endpoint.status === "invalid" && (
           <MessageBar intent="error" className={styles.notice}>
             <MessageBarBody>
-              The playback server endpoint could not be derived. Configure it in the navigation
-              settings.
+              The playback server endpoint could not be derived. Configure it in
+              the navigation settings.
             </MessageBarBody>
           </MessageBar>
         )}

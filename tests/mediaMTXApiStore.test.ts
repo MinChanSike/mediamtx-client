@@ -135,7 +135,7 @@ function installApiMock(
     if (url.includes('/v3/config/paths/patch/')) {
       return new Response(null, { status: 204 });
     }
-    if (url.endsWith('/v3/config/paths/delete/camera-1')) {
+    if (url.includes('/v3/config/paths/delete/')) {
       return new Response(null, { status: 204 });
     }
     if (url.endsWith('/v3/rtmpconns/kick/viewer-1')) {
@@ -411,6 +411,63 @@ describe('MediaMTX API Zustand store integration', () => {
     expect(runtimeOnly?.isConfigured).toBeUndefined();
     expect(items.find((item) => item.name === '**all_others')).toBeUndefined();
     expect(items.find((item) => item.name === 'config-only')).toBeUndefined();
+  });
+
+  test('excludes inactive fallback runtime paths after their concrete config is deleted', async () => {
+    resetStores('http://inactive-fallback-paths.mediamtx.test');
+    globalThis.fetch = (async (input) => {
+      const url = String(input);
+
+      if (url.endsWith('/v3/paths/list')) {
+        return jsonResponse({
+          itemCount: 2,
+          pageCount: 1,
+          items: [
+            {
+              name: 'active-publisher',
+              confName: 'all_others',
+              ready: true,
+              available: true,
+              online: true,
+              source: { type: 'rtspSession', id: 'source-1' },
+              sourceError: '',
+              tracks: ['H264'],
+              readers: [],
+              bytesReceived: 100,
+              bytesSent: 0,
+            },
+            {
+              name: 'stream_19100_6827',
+              confName: 'all_others',
+              ready: false,
+              available: false,
+              online: false,
+              source: null,
+              sourceError: '',
+              tracks: [],
+              readers: [],
+              bytesReceived: 0,
+              bytesSent: 0,
+            },
+          ],
+        });
+      }
+
+      if (url.endsWith('/v3/config/paths/list')) {
+        return jsonResponse({
+          itemCount: 1,
+          pageCount: 1,
+          items: [{ name: 'all_others', source: 'publisher' }],
+        });
+      }
+
+      return jsonResponse({ error: 'not found' }, 404);
+    }) as typeof fetch;
+
+    await refreshPathsNow();
+
+    const items = useMediaMTXApiStore.getState().paths.data?.items ?? [];
+    expect(items.map((item) => item.name)).toEqual(['active-publisher']);
   });
 
   test('excludes the MediaMTX fallback path when it appears in runtime paths', async () => {
@@ -1041,6 +1098,110 @@ describe('MediaMTX API Zustand store integration', () => {
     expect(bodies).toContain(JSON.stringify({ record: false }));
   });
 
+  test('delete stream stops recording, kicks active source, and deletes configured path in order', async () => {
+    const requests: string[] = [];
+    const bodies: string[] = [];
+    resetStores();
+    installApiMock(requests, {}, bodies);
+    await refreshPathsNow();
+
+    await runDeleteStreamMutation({
+      pathName: 'camera-1',
+      isConfigured: true,
+      isRecording: true,
+      sourceKickTarget: {
+        id: 'viewer-1',
+        type: 'rtmpConn',
+        endpoint: 'rtmpconns',
+      },
+    });
+
+    const stopRecordingIndex = requests.indexOf('PATCH http://mediamtx.test/v3/config/paths/patch/camera-1');
+    const kickIndex = requests.indexOf('POST http://mediamtx.test/v3/rtmpconns/kick/viewer-1');
+    const deleteIndex = requests.indexOf('DELETE http://mediamtx.test/v3/config/paths/delete/camera-1');
+
+    expect(stopRecordingIndex).toBeGreaterThan(-1);
+    expect(kickIndex).toBeGreaterThan(stopRecordingIndex);
+    expect(deleteIndex).toBeGreaterThan(kickIndex);
+    expect(bodies).toContain(JSON.stringify({ record: false }));
+  });
+
+  test('delete ad-hoc stream kicks source without deleting missing config', async () => {
+    const requests: string[] = [];
+    resetStores();
+    installApiMock(requests);
+    await refreshPathsNow();
+
+    await runDeleteStreamMutation({
+      pathName: 'camera-1',
+      isConfigured: false,
+      isRecording: false,
+      sourceKickTarget: {
+        id: 'viewer-1',
+        type: 'rtmpConn',
+        endpoint: 'rtmpconns',
+      },
+    });
+
+    expect(requests).toContain('POST http://mediamtx.test/v3/rtmpconns/kick/viewer-1');
+    expect(requests).not.toContain('DELETE http://mediamtx.test/v3/config/paths/delete/camera-1');
+  });
+
+  test('delete orphan runtime stream with no source creates and removes concrete config', async () => {
+    const requests: string[] = [];
+    const bodies: string[] = [];
+    resetStores();
+    installApiMock(requests, {}, bodies);
+    await refreshPathsNow();
+
+    await runDeleteStreamMutation({
+      pathName: 'stream_19100_6827',
+      isConfigured: false,
+      isRecording: false,
+      sourceKickTarget: null,
+    });
+
+    const addIndex = requests.indexOf(
+      'POST http://mediamtx.test/v3/config/paths/add/stream_19100_6827'
+    );
+    const deleteIndex = requests.indexOf(
+      'DELETE http://mediamtx.test/v3/config/paths/delete/stream_19100_6827'
+    );
+
+    expect(addIndex).toBeGreaterThan(-1);
+    expect(deleteIndex).toBeGreaterThan(addIndex);
+    expect(bodies).toContain(JSON.stringify({ source: 'publisher' }));
+  });
+
+  test('rename stream adds new config, kicks old source, and deletes old configured path', async () => {
+    const requests: string[] = [];
+    const bodies: string[] = [];
+    resetStores();
+    installApiMock(requests, {}, bodies);
+    await refreshPathsNow();
+
+    await runEditStreamMutation({
+      oldPathName: 'camera-1',
+      pathName: 'camera-2',
+      sourceUri: 'rtsp://camera:554/renamed',
+      isConfigured: true,
+      sourceKickTarget: {
+        id: 'viewer-1',
+        type: 'rtmpConn',
+        endpoint: 'rtmpconns',
+      },
+    });
+
+    const addIndex = requests.indexOf('POST http://mediamtx.test/v3/config/paths/add/camera-2');
+    const kickIndex = requests.indexOf('POST http://mediamtx.test/v3/rtmpconns/kick/viewer-1');
+    const deleteIndex = requests.indexOf('DELETE http://mediamtx.test/v3/config/paths/delete/camera-1');
+
+    expect(addIndex).toBeGreaterThan(-1);
+    expect(kickIndex).toBeGreaterThan(addIndex);
+    expect(deleteIndex).toBeGreaterThan(kickIndex);
+    expect(bodies).toContain(JSON.stringify({ source: 'rtsp://camera:554/renamed' }));
+  });
+
   test('stream add mutation refreshes mounted raw config after an initial error-only load', async () => {
     const requests: string[] = [];
     const timers = installFakeTimers();
@@ -1218,10 +1379,18 @@ describe('MediaMTX API Zustand store integration', () => {
     await refreshRawConfigNow();
 
     await runEditStreamMutation({
+      oldPathName: 'camera-1',
       pathName: 'camera-1',
       sourceUri: 'rtsp://camera:554/edited',
+      isConfigured: true,
+      sourceKickTarget: null,
     });
-    await runDeleteStreamMutation('camera-1');
+    await runDeleteStreamMutation({
+      pathName: 'camera-1',
+      isConfigured: true,
+      isRecording: false,
+      sourceKickTarget: null,
+    });
     await runKickStreamTargetMutation({
       id: 'viewer-1',
       type: 'rtmpConn',

@@ -25,6 +25,21 @@ import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
 import type { KickTarget, ViewerDetailTarget } from '@src/utils/streamDisplay';
 import { LIVE_REFRESH_MS } from '@src/utils/transferRates';
 
+export interface EditStreamMutationInput {
+  oldPathName: string;
+  pathName: string;
+  sourceUri: string;
+  isConfigured?: boolean;
+  sourceKickTarget?: KickTarget | null;
+}
+
+export interface DeleteStreamMutationInput {
+  pathName: string;
+  isConfigured?: boolean;
+  isRecording?: boolean;
+  sourceKickTarget?: KickTarget | null;
+}
+
 const SWR_CACHE_PREFIX = 'mediamtx-api';
 
 type ResourceResult<T> = {
@@ -493,16 +508,40 @@ export async function runAddStreamMutation(input: AddStreamInput): Promise<void>
   await refreshLoadedConfigAfterMutation();
 }
 
-export async function runEditStreamMutation(input: {
-  pathName: string;
-  sourceUri: string;
-}): Promise<void> {
-  await patchPath(input.pathName, input.sourceUri);
+export async function runEditStreamMutation(input: EditStreamMutationInput): Promise<void> {
+  const nextPathName = input.pathName.trim();
+  const nextSourceUri = input.sourceUri.trim();
+
+  if (nextPathName === input.oldPathName) {
+    await patchPath(input.oldPathName, nextSourceUri);
+  } else {
+    await addPathConfig(nextPathName, { source: nextSourceUri });
+    if (input.sourceKickTarget) {
+      await kickPathTarget(input.sourceKickTarget);
+    }
+    if (input.isConfigured) {
+      await deletePath(input.oldPathName);
+    }
+  }
+
   await refreshLoadedConfigAfterMutation();
 }
 
-export async function runDeleteStreamMutation(name: string): Promise<void> {
-  await deletePath(name);
+export async function runDeleteStreamMutation(input: DeleteStreamMutationInput): Promise<void> {
+  if (input.isRecording) {
+    await setPathRecording(input.pathName, false);
+  }
+  if (input.sourceKickTarget) {
+    await kickPathTarget(input.sourceKickTarget);
+  }
+
+  if (input.isConfigured) {
+    await deletePath(input.pathName);
+  } else if (!input.sourceKickTarget) {
+    await addPathConfig(input.pathName, { source: 'publisher' });
+    await deletePath(input.pathName);
+  }
+
   await refreshLoadedConfigAfterMutation();
 }
 

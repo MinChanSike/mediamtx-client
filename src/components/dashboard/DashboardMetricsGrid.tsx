@@ -38,7 +38,8 @@ const useStyles = makeStyles({
     },
   },
   rates: {
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    "@media (max-width: 820px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
     "@media (max-width: 620px)": { gridTemplateColumns: "1fr" },
   },
   protocolsSection: {
@@ -75,6 +76,7 @@ export default function DashboardMetricsGrid() {
     "Total Readers",
     "Ingress",
     "Egress",
+    "Recording Streams",
   ];
   const primary = primaryLabels.flatMap((label) =>
     cards.filter((card) => card.label === label),

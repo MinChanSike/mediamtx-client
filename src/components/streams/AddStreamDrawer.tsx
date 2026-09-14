@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from "react";
 import {
   Button,
   DrawerBody,
@@ -11,9 +11,9 @@ import {
   OverlayDrawer,
   Select,
   Text,
-} from '@fluentui/react-components';
-import { Add24Regular, Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+} from "@fluentui/react-components";
+import { Add24Regular } from "@fluentui/react-icons";
+import CloseButton from "@src/components/common/CloseButton";
 import {
   ADD_STREAM_PLACEHOLDERS,
   ADD_STREAM_PROTOCOLS,
@@ -21,7 +21,7 @@ import {
   detectAddStreamProtocol,
   useAddStream,
   type AddStreamProtocol,
-} from '@src/hooks/useAddStream';
+} from "@src/hooks/useAddStream";
 
 interface AddStreamDrawerProps {
   isOpen: boolean;
@@ -34,12 +34,20 @@ interface FormState {
   protocol: AddStreamProtocol;
 }
 
-const DEFAULT_FORM: FormState = { pathName: '', sourceUri: '', protocol: 'rtsp' };
+const DEFAULT_FORM: FormState = {
+  pathName: "",
+  sourceUri: "",
+  protocol: "rtsp",
+};
 
-export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProps) {
-  const closeButtonStyles = useCloseButtonStyles();
+export default function AddStreamDrawer({
+  isOpen,
+  onClose,
+}: AddStreamDrawerProps) {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
   const mutation = useAddStream();
 
   function handleSourceChange(value: string) {
@@ -99,11 +107,9 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
       <DrawerHeader>
         <DrawerHeaderTitle
           action={
-            <Button
-              appearance="subtle"
+            <CloseButton
+              size="small"
               aria-label="Close add stream"
-              className={closeButtonStyles.dangerHover}
-              icon={<Dismiss24Regular />}
               onClick={handleClose}
             />
           }
@@ -112,7 +118,10 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
         </DrawerHeaderTitle>
       </DrawerHeader>
 
-      <form className="flex min-h-0 flex-1 flex-col w-full" onSubmit={handleSubmit}>
+      <form
+        className="flex min-h-0 flex-1 flex-col w-full"
+        onSubmit={handleSubmit}
+      >
         <DrawerBody>
           <div className="max-w-full space-y-5">
             <Field label="Input Protocol" hint="Auto-detected from Source URI">
@@ -138,11 +147,12 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
             <Field
               label="Stream Name"
               required
-              validationState={fieldErrors.pathName ? 'error' : 'none'}
+              validationState={fieldErrors.pathName ? "error" : "none"}
               validationMessage={
                 fieldErrors.pathName ?? (
                   <Text size={200}>
-                    Letters, numbers, <code>_</code> <code>-</code> <code>/</code> only
+                    Letters, numbers, <code>_</code> <code>-</code>{" "}
+                    <code>/</code> only
                   </Text>
                 )
               }
@@ -153,7 +163,10 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
                 placeholder="e.g. cam1 or camera/main"
                 value={form.pathName}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, pathName: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    pathName: event.target.value,
+                  }))
                 }
               />
             </Field>
@@ -161,7 +174,7 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
             <Field
               label="Source URI"
               required
-              validationState={fieldErrors.sourceUri ? 'error' : 'none'}
+              validationState={fieldErrors.sourceUri ? "error" : "none"}
               validationMessage={fieldErrors.sourceUri}
             >
               <Input
@@ -177,7 +190,7 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
               <MessageBar intent="error">
                 <MessageBarBody>
                   {mutation.error?.message ??
-                    'Failed to create stream. Check stream name and source URI.'}
+                    "Failed to create stream. Check stream name and source URI."}
                 </MessageBarBody>
               </MessageBar>
             )}
@@ -192,7 +205,7 @@ export default function AddStreamDrawer({ isOpen, onClose }: AddStreamDrawerProp
                 icon={<Add24Regular />}
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? 'Adding...' : 'Add'}
+                {mutation.isPending ? "Adding..." : "Add"}
               </Button>
             </div>
           </div>

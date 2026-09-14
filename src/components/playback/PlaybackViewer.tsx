@@ -1,11 +1,19 @@
-import { type RefObject } from 'react';
-import { Button, Spinner, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { type RefObject } from "react";
+import {
+  Button,
+  Spinner,
+  Text,
+  makeStyles,
+  mergeClasses,
+  tokens,
+} from "@fluentui/react-components";
 import {
   ArrowClockwise24Regular,
-  DismissRegular,
   VideoOff16Regular,
   Warning24Regular,
-} from '@fluentui/react-icons';
+} from "@fluentui/react-icons";
+import CloseButton from "@src/components/common/CloseButton";
+import { closeButtonDangerHoverColor1 } from "@src/components/common/useCloseButtonStyles";
 
 interface PlaybackViewerProps {
   videoRef: RefObject<HTMLVideoElement>;
@@ -20,72 +28,72 @@ interface PlaybackViewerProps {
 
 const useStyles = makeStyles({
   root: {
-    position: 'relative',
-    display: 'flex',
+    position: "relative",
+    display: "flex",
     minWidth: 0,
     minHeight: 0,
     flex: 1,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000000',
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000000",
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   rootHover: {
-    ':hover': {
+    ":hover": {
       [`& .playback-viewer-close`]: {
-        opacity: '1',
+        opacity: "1",
       },
     },
   },
   video: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
   },
   closeButton: {
-    minWidth: '32px',
-    width: '32px',
-    height: '32px',
+    minWidth: "32px",
+    width: "32px",
+    height: "32px",
     padding: 0,
-    color: '#ffffff',
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    color: closeButtonDangerHoverColor1,
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
     opacity: 0,
     transitionDuration: tokens.durationNormal,
-    transitionProperty: 'opacity',
+    transitionProperty: "opacity",
     transitionTimingFunction: tokens.curveEasyEase,
-    ':hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    ":hover": {
+      backgroundColor: "rgba(255, 255, 255, 0.12)",
     },
-    ':hover:active': {
-      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    ":hover:active": {
+      backgroundColor: "rgba(255, 255, 255, 0.18)",
     },
   },
   closeLayer: {
-    position: 'absolute',
+    position: "absolute",
     top: tokens.spacingHorizontalXS,
     right: tokens.spacingHorizontalXS,
     zIndex: 3,
-    display: 'flex',
+    display: "flex",
   },
   stateLayer: {
-    position: 'absolute',
+    position: "absolute",
     inset: 0,
     zIndex: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
     gap: tokens.spacingVerticalS,
     padding: tokens.spacingHorizontalM,
-    textAlign: 'center',
+    textAlign: "center",
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground2,
   },
   bufferingLayer: {
     zIndex: 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    color: '#ffffff',
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
+    color: "#ffffff",
   },
 });
 
@@ -125,17 +133,21 @@ export default function PlaybackViewer({
             data-recorded-file-video="true"
           />
           <div className={styles.closeLayer}>
-            <Button
-              appearance="subtle"
-              className={mergeClasses('playback-viewer-close', styles.closeButton)}
-              icon={<DismissRegular style={{ fontSize: 16 }} />}
+            <CloseButton
+              size="small"
+              className={mergeClasses(
+                "playback-viewer-close",
+                styles.closeButton,
+              )}
               onClick={onClose}
               title="Close player"
               aria-label="Close player"
             />
           </div>
           {isBuffering && !hasError && (
-            <div className={mergeClasses(styles.stateLayer, styles.bufferingLayer)}>
+            <div
+              className={mergeClasses(styles.stateLayer, styles.bufferingLayer)}
+            >
               <Spinner />
               <Text>Loading file…</Text>
             </div>
@@ -145,8 +157,8 @@ export default function PlaybackViewer({
               <Warning24Regular />
               <Text weight="semibold">File failed to play</Text>
               <Text>
-                {streamName ? `${streamName}` : 'The recording'}
-                {fileName ? ` • ${fileName}` : ''} could not be played.
+                {streamName ? `${streamName}` : "The recording"}
+                {fileName ? ` • ${fileName}` : ""} could not be played.
               </Text>
               <Button
                 appearance="primary"

@@ -37,6 +37,14 @@ const useStyles = makeStyles({
     flex: 1,
     overflow: 'hidden',
   },
+  stage: {
+    display: 'flex',
+    minWidth: 0,
+    minHeight: 0,
+    flex: 1,
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
   gridArea: {
     display: 'flex',
     minWidth: 0,
@@ -91,6 +99,10 @@ export default function PlaybackSyncPage() {
   const visibleSlotPaths = useMemo(
     () => getVisibleSlotPaths(slotPaths, visibleSlotCount),
     [slotPaths, visibleSlotCount]
+  );
+  const hasStreams = useMemo(
+    () => visibleSlotPaths.some((path) => path !== null),
+    [visibleSlotPaths]
   );
 
   const slot0 = useSlotSpans(visibleSlotPaths[0], selectedDay, endpoint.baseUrl);
@@ -161,22 +173,24 @@ export default function PlaybackSyncPage() {
           onNextDay={() => handleShiftDay(1)}
         />
 
-        <div className={styles.gridArea}>
-          <PlaybackSyncGrid
-            controller={controller}
-            tileSnapshots={snapshot.tiles}
-            slotSpansStatus={slotSpansResults}
+        <div className={styles.stage}>
+          <div className={styles.gridArea}>
+            <PlaybackSyncGrid
+              controller={controller}
+              tileSnapshots={snapshot.tiles}
+              slotSpansStatus={slotSpansResults}
+            />
+          </div>
+
+          <PlaybackSyncTimeline
+            lanes={lanes}
+            dayKey={selectedDay}
+            positionMs={sharedTimestampMs}
+            onSeek={(epochMs) => controller.seekTo(epochMs)}
           />
+          <PlaybackSyncControls controller={controller} isDisabled={!hasStreams} />
         </div>
       </div>
-
-      <PlaybackSyncTimeline
-        lanes={lanes}
-        dayKey={selectedDay}
-        positionMs={sharedTimestampMs}
-        onSeek={(epochMs) => controller.seekTo(epochMs)}
-      />
-      <PlaybackSyncControls controller={controller} />
 
       <div className={styles.noticeStack}>
         {endpoint.status === 'disabled' && (

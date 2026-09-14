@@ -1,9 +1,10 @@
-import { runEditStreamMutation, useStoreMutation } from '@src/hooks/useMediaMTXApi';
+import {
+  runEditStreamMutation,
+  useStoreMutation,
+  type EditStreamMutationInput,
+} from '@src/hooks/useMediaMTXApi';
 
-interface EditStreamInput {
-  pathName: string;
-  sourceUri: string;
-}
+export type EditStreamInput = EditStreamMutationInput;
 
 export function useEditStream() {
   return useStoreMutation<EditStreamInput>('editStream', runEditStreamMutation);

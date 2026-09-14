@@ -219,6 +219,7 @@ describe('Server dashboard metrics model', () => {
       activePaths: 0,
       inboundBytesPerSecond: null,
       outboundBytesPerSecond: null,
+      recordingStreams: 0,
       rtspViewers: 0,
       rtspsViewers: 0,
       rtmpViewers: 0,
@@ -234,6 +235,7 @@ describe('Server dashboard metrics model', () => {
         'Active Streams': 0,
         Ingress: '\u2014',
         Egress: '\u2014',
+        'Recording Streams': 0,
         'Total Readers': 0,
       }
     );
@@ -264,6 +266,7 @@ describe('Server dashboard metrics model', () => {
             tracks: [],
             bytesReceived: 1024,
             bytesSent: 4096,
+            record: true,
             readers: [
               { id: 'rtsp-conn', type: 'rtspConn', state: 'read' },
               { id: 'rtsp-session', type: 'rtspSession', state: 'read' },
@@ -295,6 +298,7 @@ describe('Server dashboard metrics model', () => {
       activePaths: 1,
       inboundBytesPerSecond: 3072,
       outboundBytesPerSecond: 12288,
+      recordingStreams: 1,
       rtspViewers: 1,
       rtspsViewers: 1,
       rtmpViewers: 1,
@@ -320,6 +324,7 @@ describe('Server dashboard metrics model', () => {
       'Active Streams': { value: 1 },
       Ingress: { value: '3.0 KiB/s' },
       Egress: { value: '12.0 KiB/s' },
+      'Recording Streams': { value: 1 },
       RTSP: { value: 0, secondaryValue: 1 },
       RTSPS: { value: 0, secondaryValue: 1 },
       RTMP: { value: 0, secondaryValue: 1 },
@@ -501,11 +506,18 @@ describe('Server dashboard metrics model', () => {
   test('labels the protocol breakdown as streams and renders both counts in the existing cards', async () => {
     const metricsGrid = await Bun.file('src/components/dashboard/DashboardMetricsGrid.tsx').text();
     const metricCard = await Bun.file('src/components/common/MetricCard.tsx').text();
+    const metricsStore = await Bun.file('src/store/useDashboardMetricsStore.ts').text();
 
     expect(metricsGrid).toContain('Streams by protocol');
+    expect(metricsGrid).toContain('"Recording Streams"');
+    expect(metricsGrid).toContain('gridTemplateColumns: "repeat(3, minmax(0, 1fr))"');
     expect(metricsGrid).not.toContain('Readers by protocol');
     expect(metricCard).toContain('secondaryValue');
     expect(metricCard).toContain('secondaryUnit');
+    expect(metricsStore).toContain("unit: 'IN'");
+    expect(metricsStore).toContain("secondaryUnit: 'OUT'");
+    expect(metricsStore).not.toContain("unit: 'in'");
+    expect(metricsStore).not.toContain("secondaryUnit: 'out'");
   });
 
   test('uses zero defaults for disabled protocols and invalid uptime', () => {

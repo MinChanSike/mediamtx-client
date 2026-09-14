@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Button,
   DrawerBody,
@@ -11,65 +11,67 @@ import {
   Text,
   makeStyles,
   tokens,
-} from '@fluentui/react-components';
-import { ArrowClockwise20Regular, Code20Regular, Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
-import PageHeader from '@src/components/common/PageHeader';
-import ConfigRawView from '@src/components/config/ConfigRawView';
-import ConfigSummaryView from '@src/components/config/ConfigSummaryView';
-import ServerStatusCard from '@src/components/dashboard/ServerStatusCard';
-import DashboardMetricsGrid from '@src/components/dashboard/DashboardMetricsGrid';
-import { useMediaMTXConfig, useMediaMTXRawConfig } from '@src/hooks/useMediaMTXConfig';
-import type { CompleteServerConfig, GlobalConfig } from '@src/types/config';
+} from "@fluentui/react-components";
+import { ArrowClockwise20Regular, Code20Regular } from "@fluentui/react-icons";
+import CloseButton from "@src/components/common/CloseButton";
+import PageHeader from "@src/components/common/PageHeader";
+import ConfigRawView from "@src/components/config/ConfigRawView";
+import ConfigSummaryView from "@src/components/config/ConfigSummaryView";
+import ServerStatusCard from "@src/components/dashboard/ServerStatusCard";
+import DashboardMetricsGrid from "@src/components/dashboard/DashboardMetricsGrid";
+import {
+  useMediaMTXConfig,
+  useMediaMTXRawConfig,
+} from "@src/hooks/useMediaMTXConfig";
+import type { CompleteServerConfig, GlobalConfig } from "@src/types/config";
 
 const useStyles = makeStyles({
   root: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
+    display: "flex",
+    flexDirection: "column",
   },
   contentGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(260px, 320px) minmax(0, 1fr)',
+    display: "grid",
+    gridTemplateColumns: "minmax(260px, 320px) minmax(0, 1fr)",
     gap: tokens.spacingHorizontalS,
-    alignItems: 'start',
-    '@media (max-width: 1080px)': {
-      gridTemplateColumns: '1fr',
+    alignItems: "start",
+    "@media (max-width: 1080px)": {
+      gridTemplateColumns: "1fr",
     },
   },
   configSection: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalXS,
   },
   configHeader: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalS,
-    '@media (max-width: 620px)': {
-      alignItems: 'flex-start',
-      flexDirection: 'column',
+    "@media (max-width: 620px)": {
+      alignItems: "flex-start",
+      flexDirection: "column",
     },
   },
   configCopy: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
   },
   configSubtitle: {
     color: tokens.colorNeutralForeground3,
   },
   drawerBody: {
-    display: 'flex',
+    display: "flex",
     minHeight: 0,
-    height: '100%',
-    flexDirection: 'column',
+    height: "100%",
+    flexDirection: "column",
   },
   drawerContent: {
-    display: 'flex',
+    display: "flex",
     minHeight: 0,
     flex: 1,
   },
@@ -79,7 +81,9 @@ interface DashboardConfigContentProps {
   config: GlobalConfig;
 }
 
-export function DashboardConfigContent({ config }: DashboardConfigContentProps) {
+export function DashboardConfigContent({
+  config,
+}: DashboardConfigContentProps) {
   return <ConfigSummaryView config={config} />;
 }
 
@@ -91,7 +95,11 @@ interface RawConfigDrawerProps {
   onClose: () => void;
 }
 
-export function RawConfigDrawerContent({ config }: { config: CompleteServerConfig }) {
+export function RawConfigDrawerContent({
+  config,
+}: {
+  config: CompleteServerConfig;
+}) {
   const styles = useStyles();
 
   return (
@@ -109,7 +117,6 @@ export function RawConfigDrawer({
   onClose,
 }: RawConfigDrawerProps) {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
 
   return (
     <OverlayDrawer
@@ -122,15 +129,7 @@ export function RawConfigDrawer({
     >
       <DrawerHeader>
         <DrawerHeaderTitle
-          action={
-            <Button
-              appearance="subtle"
-              aria-label="Close raw JSON"
-              className={closeButtonStyles.dangerHover}
-              icon={<Dismiss24Regular />}
-              onClick={onClose}
-            />
-          }
+          action={<CloseButton aria-label="Close raw JSON" onClick={onClose} />}
         >
           Raw Configuration JSON
         </DrawerHeaderTitle>
@@ -168,7 +167,7 @@ export default function DashboardPage() {
   return (
     <div className={styles.root}>
       <PageHeader
-        title="Server Dashboard"
+        title="Dashboard"
         subtitle="MediaMTX Active Stream status, metrics, and configuration"
       />
       <div className={styles.contentGrid}>
@@ -185,7 +184,7 @@ export default function DashboardPage() {
               Read-only MediaMTX server configuration
             </Text>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Button
               appearance="subtle"
               icon={<ArrowClockwise20Regular />}
@@ -211,7 +210,8 @@ export default function DashboardPage() {
         {isConfigError && (
           <MessageBar intent="error">
             <MessageBarBody>
-              Unable to load configuration. Check that MediaMTX API is reachable.
+              Unable to load configuration. Check that MediaMTX API is
+              reachable.
             </MessageBarBody>
           </MessageBar>
         )}

@@ -44,7 +44,6 @@ const useStyles = makeStyles({
     minHeight: 0,
     minWidth: 0,
     flexDirection: "column",
-    gap: tokens.spacingVerticalM,
     overflow: "hidden",
   },
   toolbar: {
@@ -56,6 +55,7 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     padding: tokens.spacingHorizontalS,
+    marginBottom: tokens.spacingVerticalS,
   },
   toolbarFreshness: {
     position: "absolute",
@@ -120,10 +120,21 @@ export default function StreamsPage() {
     recordingStream,
     streams,
   );
+  const latestDeleteStream = resolveLatestDetailsStream(deleteStream, streams) ?? deleteStream;
+  const deleteWillStopRecording = latestDeleteStream
+    ? isStreamRecordingEnabled(latestDeleteStream)
+    : false;
+  const deleteWillKickSource = latestDeleteStream
+    ? !!getSourceKickTarget(latestDeleteStream)
+    : false;
+  const deleteWillRemoveConfig = !!latestDeleteStream?.isConfigured;
+  const deleteWillRemoveOrphanRuntimePath = !!latestDeleteStream && !deleteWillRemoveConfig && !deleteWillKickSource;
   const willStartRecording = latestRecordingStream
     ? !isStreamRecordingEnabled(latestRecordingStream)
     : false;
-  const recordingActionLabel = willStartRecording ? "Start Recording" : "Stop Recording";
+  const recordingActionLabel = willStartRecording
+    ? "Start Recording"
+    : "Stop Recording";
 
   const filteredStreams = streams
     .filter((stream) => {
@@ -198,10 +209,19 @@ export default function StreamsPage() {
   }
 
   function handleConfirmDelete() {
-    if (!deleteStream) return;
-    deleteMutation.mutate(deleteStream.name, {
-      onSettled: () => setDeleteStream(null),
-    });
+    if (!latestDeleteStream) return;
+
+    deleteMutation.mutate(
+      {
+        pathName: latestDeleteStream.name,
+        isConfigured: latestDeleteStream.isConfigured,
+        isRecording: isStreamRecordingEnabled(latestDeleteStream),
+        sourceKickTarget: getSourceKickTarget(latestDeleteStream),
+      },
+      {
+        onSettled: () => setDeleteStream(null),
+      },
+    );
   }
 
   function handleKickSource(stream: PathItem) {
@@ -321,8 +341,27 @@ export default function StreamsPage() {
           <DialogBody>
             <DialogTitle>Delete Stream</DialogTitle>
             <DialogContent>
-              {deleteStream && (
-                <Text>{`Are you sure you want to delete stream "${deleteStream.name}"?`}</Text>
+              {latestDeleteStream && (
+                <div className="space-y-2">
+                  <Text block>{`Delete stream "${latestDeleteStream.name}" from the server?`}</Text>
+                  <Text block size={200}>
+                    {deleteWillRemoveConfig
+                      ? "Its path configuration will be removed."
+                      : deleteWillRemoveOrphanRuntimePath
+                        ? "This runtime-only path has no active source, so a temporary path configuration will be created and removed to clear it from the server."
+                        : "This is an ad-hoc stream, so its active source will be kicked instead of deleting a path configuration."}
+                  </Text>
+                  {(deleteWillStopRecording || deleteWillKickSource) && (
+                    <Text block size={200}>
+                      {`This will ${[
+                        deleteWillStopRecording ? "stop the active recording" : null,
+                        deleteWillKickSource ? "kick the current source" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" and ")}.`}
+                    </Text>
+                  )}
+                </div>
               )}
             </DialogContent>
             <DialogActions>
@@ -392,7 +431,9 @@ export default function StreamsPage() {
                 disabled={recordingMutation.isPending}
                 onClick={handleConfirmToggleRecording}
               >
-                {recordingMutation.isPending ? "Saving..." : recordingActionLabel}
+                {recordingMutation.isPending
+                  ? "Saving..."
+                  : recordingActionLabel}
               </Button>
             </DialogActions>
           </DialogBody>

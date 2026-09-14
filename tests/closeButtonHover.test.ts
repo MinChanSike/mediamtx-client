@@ -4,11 +4,11 @@ import { readFileSync } from 'node:fs';
 const source = (path: string) =>
   readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-function buttonContaining(sourceText: string, marker: string) {
+function buttonContaining(sourceText: string, marker: string, tag = '<Button') {
   const markerIndex = sourceText.indexOf(marker);
   expect(markerIndex).toBeGreaterThanOrEqual(0);
 
-  const buttonStart = sourceText.lastIndexOf('<Button', markerIndex);
+  const buttonStart = sourceText.lastIndexOf(tag, markerIndex);
   expect(buttonStart).toBeGreaterThanOrEqual(0);
 
   const lines = sourceText.slice(buttonStart).split(/\r?\n/);
@@ -78,14 +78,25 @@ describe('close button hover affordance', () => {
     expect(styleSource).not.toMatch(/\b(width|height|minWidth|padding|margin|position)\s*:/);
   });
 
-  test('applies the red hover style to every dismiss or close icon button', () => {
+  test('CloseButton centralizes sizes, className, and the red hover affordance', () => {
+    const closeSource = source('src/components/common/CloseButton.tsx');
+
+    expect(closeSource).toContain("'sm' | 'md' | 'lg'");
+    expect(closeSource).toContain('Dismiss16Regular');
+    expect(closeSource).toContain('Dismiss24Regular');
+    expect(closeSource).toContain('Dismiss48Regular');
+    expect(closeSource).toContain('className,');
+    expect(closeSource).toContain('closeButtonStyles.dangerHover');
+  });
+
+  test('renders every dismiss or close control through the shared CloseButton', () => {
     for (const { path, marker } of dismissButtons) {
       const componentSource = source(path);
-      const buttonSource = buttonContaining(componentSource, marker);
+      const buttonSource = buttonContaining(componentSource, marker, '<CloseButton');
 
-      expect(componentSource).toContain('useCloseButtonStyles');
-      expect(buttonSource).toContain('className=');
-      expect(buttonSource).toContain('closeButtonStyles.dangerHover');
+      expect(componentSource).toContain(
+        "import CloseButton from '@src/components/common/CloseButton'"
+      );
       expect(buttonSource).toContain('onClick=');
       expect(buttonSource).toMatch(/aria-label="(?:Close|Cancel)[^"]*"/);
     }

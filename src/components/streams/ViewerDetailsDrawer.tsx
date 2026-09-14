@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import {
-  Button,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -9,8 +8,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { Dismiss24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+import CloseButton from '@src/components/common/CloseButton';
 import { useStoreBackedViewerDetail } from '@src/hooks/useMediaMTXApi';
 import type { ViewerDetailTarget } from '@src/utils/streamDisplay';
 import { getFetchedViewerPrimitiveDetails } from '@src/utils/streamDetails';
@@ -66,7 +64,6 @@ export default function ViewerDetailsDrawer({
   onClose,
 }: ViewerDetailsDrawerProps) {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
   const viewerDetailQuery = useStoreBackedViewerDetail(viewerTarget, isOpen && !!viewerTarget);
   const fetchedViewerDetails = getFetchedViewerPrimitiveDetails(viewerDetailQuery.data);
 
@@ -82,11 +79,8 @@ export default function ViewerDetailsDrawer({
       <DrawerHeader>
         <DrawerHeaderTitle
           action={
-            <Button
-              appearance="subtle"
+            <CloseButton
               aria-label="Close reader details"
-              className={closeButtonStyles.dangerHover}
-              icon={<Dismiss24Regular />}
               onClick={onClose}
             />
           }

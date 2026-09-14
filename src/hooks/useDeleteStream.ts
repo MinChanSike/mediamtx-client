@@ -1,5 +1,11 @@
-import { runDeleteStreamMutation, useStoreMutation } from '@src/hooks/useMediaMTXApi';
+import {
+  runDeleteStreamMutation,
+  useStoreMutation,
+  type DeleteStreamMutationInput,
+} from '@src/hooks/useMediaMTXApi';
+
+export type DeleteStreamInput = DeleteStreamMutationInput;
 
 export function useDeleteStream() {
-  return useStoreMutation('deleteStream', runDeleteStreamMutation);
+  return useStoreMutation<DeleteStreamInput>('deleteStream', runDeleteStreamMutation);
 }

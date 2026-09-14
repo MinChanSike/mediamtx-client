@@ -31,6 +31,11 @@ describe('playback reference layout contract', () => {
     expect(page).toContain('<PlaybackSyncGrid');
     expect(page).toContain('<PlaybackSyncTimeline');
     expect(page).toContain('<PlaybackSyncControls');
+    expect(page).toMatch(/stage: \{[\s\S]*?flexDirection: ["']column["']/);
+    expect(page.indexOf('<PlaybackSyncRecordingSidebar')).toBeLessThan(
+      page.indexOf('className={styles.stage}')
+    );
+    expect(page.indexOf('className={styles.stage}')).toBeLessThan(page.indexOf('<PlaybackSyncGrid'));
     expect(page.indexOf('<PlaybackSyncGrid')).toBeLessThan(page.indexOf('<PlaybackSyncTimeline'));
     expect(page.indexOf('<PlaybackSyncTimeline')).toBeLessThan(page.indexOf('<PlaybackSyncControls'));
     expect(grid).toContain("'1x2': { slotCount: 2, columns: 2 }");
@@ -40,14 +45,16 @@ describe('playback reference layout contract', () => {
     expect(tile).toContain('registerPlaybackSyncDropTarget');
     expect(await Bun.file('src/components/playbackSync/PlaybackSlotPicker.tsx').exists()).toBe(false);
 
-    expect(rail).toContain("width: '220px'");
+    expect(rail).toMatch(/width: ["']220px["']/);
     expect(rail).not.toContain('Last recording');
     expect(rail).not.toContain('>Today<');
     expect(rail).toContain('Streams');
     expect(rail).toContain('VideoClipFilled');
     expect(rail).toContain('VideoClipOffFilled');
     expect(rail).not.toContain('Circle12Filled');
-    expect(rail).toContain("return `${isAvailable ? 'Recorded' : 'No recorded'} ${date}`");
+    expect(rail).toMatch(
+      /return `\$\{isAvailable \? ["']Recorded["'] : ["']No recorded["']\} \$\{date\}`/
+    );
     expect(rail).toContain('borderTopWidth: 0');
     expect(rail).toContain('borderBottomWidth: 0');
 
@@ -74,6 +81,33 @@ describe('playback reference layout contract', () => {
     expect(controls).toContain('>Rate</Label>');
     expect(controls).not.toContain('<Dropdown');
     expect(controls).toContain('size="small"');
+  });
+
+  test('empty grid freezes the timeline and disables transport controls', async () => {
+    const page = await Bun.file('src/pages/PlaybackSyncPage.tsx').text();
+    const hook = await Bun.file('src/hooks/useRecordedPlaybackSync.ts').text();
+    const controls = await Bun.file('src/components/playbackSync/PlaybackSyncControls.tsx').text();
+
+    expect(page).toContain('isDisabled={!hasStreams}');
+    expect(page).toContain('visibleSlotPaths.some((path) => path !== null)');
+    expect(hook).toContain('const hasAssignedPaths = Object.keys(spansByPath).length > 0');
+    expect(hook).toMatch(/if \(hasAssignedPaths\) return;/);
+    expect(hook).toContain('controller.pause()');
+    expect(hook).toContain('store.setRate(1)');
+    expect(controls).toContain('isDisabled: boolean');
+    expect((controls.match(/disabled=\{isDisabled\}/g) ?? []).length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('tiles show the stream name above the no-footage message', async () => {
+    const tile = await Bun.file('src/components/playbackSync/PlaybackSyncTile.tsx').text();
+
+    expect(tile).toContain('stateLayerStreamName');
+    expect(tile.indexOf('<Warning24Regular />')).toBeLessThan(
+      tile.indexOf('styles.stateLayerStreamName')
+    );
+    expect(tile.indexOf('styles.stateLayerStreamName')).toBeLessThan(
+      tile.indexOf('{message?.title}')
+    );
   });
 
   test('reports recording availability for the selected local day', () => {

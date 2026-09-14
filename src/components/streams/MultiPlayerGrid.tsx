@@ -1,82 +1,97 @@
-import { useEffect, useMemo, useRef, useState, type ElementRef, type ReactNode } from 'react';
-import { Button, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ElementRef,
+  type ReactNode,
+} from "react";
+import {
+  Button,
+  Text,
+  makeStyles,
+  mergeClasses,
+  tokens,
+} from "@fluentui/react-components";
 import {
   draggable,
   dropTargetForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   ChevronRight16Regular,
   CircleFilled,
-  DismissRegular,
   Folder16Regular,
   VideoOff16Regular,
   Video16Filled,
-} from '@fluentui/react-icons';
-import usePlayerStore from '@src/store/usePlayerStore';
-import type { PathItem } from '@src/types/stream';
-import VideoPlayer from '@src/components/streams/VideoPlayer';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
-import { isStreamOnline } from '@src/utils/streamStatus';
-import { buildStreamTree, type StreamTreeNode } from '@src/components/streams/streamTree';
-import mediaMtxLogo from '@src/assets/logo-mediaMTX.svg';
+} from "@fluentui/react-icons";
+import usePlayerStore from "@src/store/usePlayerStore";
+import type { PathItem } from "@src/types/stream";
+import VideoPlayer from "@src/components/streams/VideoPlayer";
+import CloseButton from "@src/components/common/CloseButton";
+import { isStreamOnline } from "@src/utils/streamStatus";
+import {
+  buildStreamTree,
+  type StreamTreeNode,
+} from "@src/components/streams/streamTree";
+import mediaMtxLogo from "@src/assets/logo-mediaMTX.svg";
 import {
   assignDroppedStream,
   createStreamAssignmentDragData,
   isStreamAssignmentDragData,
-} from '@src/components/streams/streamDragData';
+} from "@src/components/streams/streamDragData";
 
 interface MultiPlayerGridProps {
   streams: PathItem[];
 }
 
 const GRID_DETAILS = {
-  '1x1': { slotCount: 1, columns: 1 },
-  '2x2': { slotCount: 4, columns: 2 },
-  '3x3': { slotCount: 9, columns: 3 },
-  '4x4': { slotCount: 16, columns: 4 },
+  "1x1": { slotCount: 1, columns: 1 },
+  "2x2": { slotCount: 4, columns: 2 },
+  "3x3": { slotCount: 9, columns: 3 },
+  "4x4": { slotCount: 16, columns: 4 },
 } as const;
 
 const useStyles = makeStyles({
   root: {
-    display: 'flex',
-    width: '100%',
-    height: '100%',
+    display: "flex",
+    width: "100%",
+    height: "100%",
     minHeight: 0,
     minWidth: 0,
-    overflow: 'hidden',
+    overflow: "hidden",
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
     backgroundColor: tokens.colorNeutralBackground1,
-    '@media (max-width: 900px)': {
-      flexDirection: 'column',
+    "@media (max-width: 900px)": {
+      flexDirection: "column",
     },
   },
   sidebar: {
-    display: 'flex',
-    width: '220px',
+    display: "flex",
+    width: "220px",
     flexShrink: 0,
-    flexDirection: 'column',
+    flexDirection: "column",
     borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
     backgroundColor: tokens.colorNeutralBackground2,
-    '@media (max-width: 900px)': {
-      width: '100%',
-      maxHeight: '180px',
+    "@media (max-width: 900px)": {
+      width: "100%",
+      maxHeight: "180px",
       borderRightWidth: 0,
       borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
     },
   },
   sidebarHeader: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: 0,
     flexShrink: 0,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
     padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
   },
   sidebarTitle: {
-    display: 'block',
+    display: "block",
   },
   sidebarHint: {
-    display: 'block',
+    display: "block",
     marginTop: 0,
     marginBottom: 0,
     color: tokens.colorNeutralForeground3,
@@ -84,20 +99,20 @@ const useStyles = makeStyles({
   streamList: {
     minHeight: 0,
     flex: 1,
-    overflowY: 'auto',
+    overflowY: "auto",
     padding: tokens.spacingHorizontalXS,
   },
   treeGroup: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
   },
   branchButton: {
-    width: '100%',
-    display: 'flex',
-    minHeight: '28px',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    width: "100%",
+    display: "flex",
+    minHeight: "28px",
+    alignItems: "center",
+    justifyContent: "flex-start",
     gap: tokens.spacingHorizontalXXS,
     color: tokens.colorNeutralForeground2,
     fontSize: tokens.fontSizeBase200,
@@ -108,15 +123,15 @@ const useStyles = makeStyles({
   },
   branchChevron: {
     transitionDuration: tokens.durationFast,
-    transitionProperty: 'transform',
+    transitionProperty: "transform",
     transitionTimingFunction: tokens.curveEasyEase,
   },
   branchChevronExpanded: {
-    transform: 'rotate(90deg)',
+    transform: "rotate(90deg)",
   },
   branchIcon: {
-    width: '16px',
-    height: '16px',
+    width: "16px",
+    height: "16px",
     flexShrink: 0,
     color: tokens.colorNeutralForeground3,
   },
@@ -126,49 +141,49 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
   },
   streamButton: {
-    width: '100%',
-    minHeight: '30px',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    width: "100%",
+    minHeight: "30px",
+    alignItems: "center",
+    justifyContent: "flex-start",
     gap: tokens.spacingHorizontalXXS,
     marginBottom: tokens.spacingVerticalXXS,
-    cursor: 'grab',
+    cursor: "grab",
   },
   draggingStreamButton: {
-    cursor: 'grabbing',
+    cursor: "grabbing",
     opacity: 0.45,
   },
   wall: {
     minWidth: 0,
     minHeight: 0,
     flex: 1,
-    overflow: 'auto',
+    overflow: "auto",
     backgroundColor: tokens.colorNeutralBackground3,
     padding: 0,
   },
   grid: {
-    display: 'grid',
-    width: '100%',
-    height: '100%',
+    display: "grid",
+    width: "100%",
+    height: "100%",
     minHeight: 0,
     gap: tokens.strokeWidthThin,
-    gridAutoRows: 'minmax(0, 1fr)',
+    gridAutoRows: "minmax(0, 1fr)",
     backgroundColor: tokens.colorNeutralStroke3,
   },
   cell: {
-    position: 'relative',
+    position: "relative",
     minWidth: 0,
     minHeight: 0,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 0,
     backgroundColor: tokens.colorNeutralBackground1,
     padding: 0,
-    outlineStyle: 'none',
-    boxShadow: 'none',
+    outlineStyle: "none",
+    boxShadow: "none",
     transitionDuration: tokens.durationFast,
-    transitionProperty: 'background-color, box-shadow',
+    transitionProperty: "background-color, box-shadow",
     transitionTimingFunction: tokens.curveEasyEase,
-    ':hover': {
+    ":hover": {
       backgroundColor: tokens.colorNeutralBackground1Hover,
       boxShadow: `inset 0 0 0 ${tokens.strokeWidthThin} ${tokens.colorNeutralStroke1}`,
     },
@@ -178,39 +193,39 @@ const useStyles = makeStyles({
     boxShadow: `inset 0 0 0 ${tokens.strokeWidthThick} ${tokens.colorBrandStroke1}`,
   },
   occupiedCell: {
-    backgroundColor: '#000000',
-    ':hover': {
+    backgroundColor: "#000000",
+    ":hover": {
       boxShadow: `inset 0 0 0 ${tokens.strokeWidthThin} ${tokens.colorBrandStroke2Hover}`,
     },
   },
   overlay: {
-    pointerEvents: 'auto',
-    position: 'absolute',
+    pointerEvents: "auto",
+    position: "absolute",
     top: 0,
     right: 0,
     left: 0,
     zIndex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalXS,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
     padding: `2px ${tokens.spacingHorizontalXS}`,
-    color: '#ffffff',
+    color: "#ffffff",
     opacity: 0,
     transitionDuration: tokens.durationNormal,
-    transitionProperty: 'opacity',
+    transitionProperty: "opacity",
     transitionTimingFunction: tokens.curveEasyEase,
   },
   streamName: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: tokens.fontSizeBase100,
     fontWeight: tokens.fontWeightRegular,
     lineHeight: tokens.lineHeightBase100,
   },
   streamIcon: {
-    width: '16px',
-    height: '16px',
+    width: "16px",
+    height: "16px",
     flexShrink: 0,
     color: tokens.colorNeutralForeground3,
   },
@@ -218,78 +233,78 @@ const useStyles = makeStyles({
     color: tokens.colorPaletteLightGreenForeground3,
   },
   titleStatusIcon: {
-    width: '8px',
-    height: '8px',
+    width: "8px",
+    height: "8px",
     flexShrink: 0,
     color: tokens.colorPaletteLightGreenForeground3,
   },
   clearButton: {
-    pointerEvents: 'auto',
+    pointerEvents: "auto",
     flexShrink: 0,
-    minWidth: '20px',
-    width: '20px',
-    height: '20px',
+    minWidth: "20px",
+    width: "20px",
+    height: "20px",
     padding: 0,
-    color: '#ffffff',
-    ':hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    color: "#ffffff",
+    ":hover": {
+      backgroundColor: "rgba(255, 255, 255, 0.12)",
     },
-    ':hover:active': {
-      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    ":hover:active": {
+      backgroundColor: "rgba(255, 255, 255, 0.18)",
     },
   },
   emptyCell: {
-    display: 'grid',
-    width: '100%',
-    height: '100%',
-    minHeight: '120px',
-    placeItems: 'center',
-    textAlign: 'center',
+    display: "grid",
+    width: "100%",
+    height: "100%",
+    minHeight: "120px",
+    placeItems: "center",
+    textAlign: "center",
   },
   emptyCopy: {
     opacity: 0.2,
     transitionDuration: tokens.durationFast,
-    transitionProperty: 'filter, opacity',
+    transitionProperty: "filter, opacity",
     transitionTimingFunction: tokens.curveEasyEase,
-    filter: 'grayscale(1)',
-    ':global(.stream-grid-cell:hover)': {
-      filter: 'grayscale(0)',
+    filter: "grayscale(1)",
+    ":global(.stream-grid-cell:hover)": {
+      filter: "grayscale(0)",
       opacity: 0.72,
     },
   },
   emptyLogo: {
-    display: 'block',
-    width: '100%',
-    height: 'auto',
+    display: "block",
+    width: "100%",
+    height: "auto",
   },
   emptyLogo1x1: {
-    maxWidth: '320px',
+    maxWidth: "320px",
   },
   emptyLogo2x2: {
-    maxWidth: '200px',
+    maxWidth: "200px",
   },
   emptyLogo3x3: {
-    maxWidth: '132px',
+    maxWidth: "132px",
   },
   emptyLogo4x4: {
-    maxWidth: '92px',
+    maxWidth: "92px",
   },
 });
 
 interface DraggableStreamProps {
-  node: Extract<StreamTreeNode, { type: 'leaf' }>;
+  node: Extract<StreamTreeNode, { type: "leaf" }>;
   inset: string;
 }
 
 interface RegisterStreamDraggableOptions {
-  element: ElementRef<'button'>;
+  element: ElementRef<"button">;
   streamName: string;
   setIsDragging: (isDragging: boolean) => void;
 }
 
 export function registerStreamDraggable(
   { element, streamName, setIsDragging }: RegisterStreamDraggableOptions,
-  register: typeof draggable = draggable
+  register: typeof draggable = draggable,
 ) {
   return register({
     element,
@@ -301,7 +316,7 @@ export function registerStreamDraggable(
 
 function DraggableStream({ node, inset }: DraggableStreamProps) {
   const styles = useStyles();
-  const elementRef = useRef<ElementRef<'button'>>(null);
+  const elementRef = useRef<ElementRef<"button">>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isOnline = isStreamOnline(node.stream);
 
@@ -321,11 +336,16 @@ function DraggableStream({ node, inset }: DraggableStreamProps) {
       ref={elementRef}
       appearance="subtle"
       aria-label={`Drag ${node.stream.name} to a grid cell`}
-      className={mergeClasses(styles.streamButton, isDragging && styles.draggingStreamButton)}
+      className={mergeClasses(
+        styles.streamButton,
+        isDragging && styles.draggingStreamButton,
+      )}
       style={{ paddingLeft: `calc(${inset} + 8px)` }}
     >
       {isOnline ? (
-        <Video16Filled className={mergeClasses(styles.streamIcon, styles.onlineStreamIcon)} />
+        <Video16Filled
+          className={mergeClasses(styles.streamIcon, styles.onlineStreamIcon)}
+        />
       ) : (
         <VideoOff16Regular className={styles.streamIcon} />
       )}
@@ -345,15 +365,20 @@ interface GridDropCellProps {
 }
 
 interface RegisterGridDropTargetOptions {
-  element: ElementRef<'div'>;
+  element: ElementRef<"div">;
   slot: number;
   setGridStream: (slot: number, streamName: string) => void;
   setIsDraggedOver: (isDraggedOver: boolean) => void;
 }
 
 export function registerGridDropTarget(
-  { element, slot, setGridStream, setIsDraggedOver }: RegisterGridDropTargetOptions,
-  register: typeof dropTargetForElements = dropTargetForElements
+  {
+    element,
+    slot,
+    setGridStream,
+    setIsDraggedOver,
+  }: RegisterGridDropTargetOptions,
+  register: typeof dropTargetForElements = dropTargetForElements,
 ) {
   return register({
     element,
@@ -375,8 +400,7 @@ function GridDropCell({
   clearGridStream,
 }: GridDropCellProps) {
   const styles = useStyles();
-  const closeButtonStyles = useCloseButtonStyles();
-  const elementRef = useRef<ElementRef<'div'>>(null);
+  const elementRef = useRef<ElementRef<"div">>(null);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
 
   useEffect(() => {
@@ -394,30 +418,33 @@ function GridDropCell({
   return (
     <div
       ref={elementRef}
-      aria-label={`Grid slot ${index + 1}${streamName ? `, ${streamName}` : ', empty'}`}
+      aria-label={`Grid slot ${index + 1}${streamName ? `, ${streamName}` : ", empty"}`}
       className={mergeClasses(
-        'stream-grid-cell',
+        "stream-grid-cell",
         styles.cell,
         streamName ? styles.occupiedCell : undefined,
-        isDraggedOver ? styles.dragOverCell : undefined
+        isDraggedOver ? styles.dragOverCell : undefined,
       )}
     >
       {streamName ? (
         <>
           <VideoPlayer streamName={streamName} fillCell />
-          <div className={mergeClasses('stream-grid-overlay', styles.overlay)}>
+          <div className={mergeClasses("stream-grid-overlay", styles.overlay)}>
             <div className="flex min-w-0 items-center gap-2">
-              <Text font="monospace" size={100} truncate className={styles.streamName}>
+              <Text
+                font="monospace"
+                size={100}
+                truncate
+                className={styles.streamName}
+              >
                 {streamName}
               </Text>
               <CircleFilled className={styles.titleStatusIcon} />
             </div>
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<DismissRegular style={{ fontSize: 16 }} />}
+            <CloseButton
+              size="medium"
               onClick={() => clearGridStream(index)}
-              className={mergeClasses(styles.clearButton, closeButtonStyles.dangerHover)}
+              className={styles.clearButton}
               title="Close"
               aria-label="Close"
             />
@@ -425,16 +452,18 @@ function GridDropCell({
         </>
       ) : (
         <div className={styles.emptyCell}>
-          <div className={mergeClasses('stream-grid-empty-copy', styles.emptyCopy)}>
+          <div
+            className={mergeClasses("stream-grid-empty-copy", styles.emptyCopy)}
+          >
             <img
               src={mediaMtxLogo}
               alt="MediaMTX"
               className={mergeClasses(
                 styles.emptyLogo,
-                gridLayout === '1x1' && styles.emptyLogo1x1,
-                gridLayout === '2x2' && styles.emptyLogo2x2,
-                gridLayout === '3x3' && styles.emptyLogo3x3,
-                gridLayout === '4x4' && styles.emptyLogo4x4
+                gridLayout === "1x1" && styles.emptyLogo1x1,
+                gridLayout === "2x2" && styles.emptyLogo2x2,
+                gridLayout === "3x3" && styles.emptyLogo3x3,
+                gridLayout === "4x4" && styles.emptyLogo4x4,
               )}
             />
           </div>
@@ -450,7 +479,9 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
   const activeGridStreams = usePlayerStore((state) => state.activeGridStreams);
   const setGridStream = usePlayerStore((state) => state.setGridStream);
   const clearGridStream = usePlayerStore((state) => state.clearGridStream);
-  const [collapsedBranchIds, setCollapsedBranchIds] = useState<Set<string>>(() => new Set());
+  const [collapsedBranchIds, setCollapsedBranchIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const streamTree = useMemo(() => buildStreamTree(streams), [streams]);
 
   const gridDetails = GRID_DETAILS[gridLayout];
@@ -474,7 +505,7 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
     nodes.map((node) => {
       const inset = `${depth * 14}px`;
 
-      if (node.type === 'branch') {
+      if (node.type === "branch") {
         const isExpanded = !collapsedBranchIds.has(node.id);
 
         return (
@@ -482,7 +513,7 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
             <Button
               appearance="subtle"
               aria-expanded={isExpanded}
-              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.label}`}
+              aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.label}`}
               className={styles.branchButton}
               onClick={() => toggleBranch(node.id)}
               style={{ paddingLeft: `calc(${inset} + 4px)` }}
@@ -491,7 +522,7 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
                 className={mergeClasses(
                   styles.branchIcon,
                   styles.branchChevron,
-                  isExpanded && styles.branchChevronExpanded
+                  isExpanded && styles.branchChevronExpanded,
                 )}
               />
               <Folder16Regular className={styles.branchIcon} />
@@ -507,7 +538,10 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
 
   return (
     <div className={styles.root}>
-      <aside aria-label="Streams available for grid assignment" className={styles.sidebar}>
+      <aside
+        aria-label="Streams available for grid assignment"
+        className={styles.sidebar}
+      >
         <div className={styles.sidebarHeader}>
           <Text className={styles.sidebarTitle} size={200} weight="semibold">
             Streams
@@ -532,7 +566,9 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
         <div
           aria-label={`${gridLayout} video grid`}
           className={styles.grid}
-          style={{ gridTemplateColumns: `repeat(${gridDetails.columns}, minmax(0, 1fr))` }}
+          style={{
+            gridTemplateColumns: `repeat(${gridDetails.columns}, minmax(0, 1fr))`,
+          }}
         >
           {Array.from({ length: slotCount }, (_, index) => {
             const streamName = activeGridStreams.get(index) ?? null;

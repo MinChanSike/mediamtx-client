@@ -1,0 +1,307 @@
+# MediaMTX API - VS Code REST Client
+# API Server:      http://localhost:9997/
+# Playback Server: http://localhost:9996/
+# Docs: https://github.com/bluenviron/mediamtx
+# Tool: https://github.com/Huachao/vscode-restclient
+
+@apiBase = http://localhost:9997
+@recordingBase = http://localhost:9996
+@pathName = mystream
+@sessionId = 00000000-0000-0000-0000-000000000000
+
+
+# ============================================================
+# General
+# ============================================================
+
+### Get server info
+GET {{apiBase}}/v3/info HTTP/1.1
+
+
+# ============================================================
+# Authentication
+# ============================================================
+
+### Refresh JWT JWKS
+POST {{apiBase}}/v3/auth/jwks/refresh HTTP/1.1
+
+
+# ============================================================
+# Configuration — Global
+# ============================================================
+
+### Get global configuration
+GET {{apiBase}}/v3/config/global/get HTTP/1.1
+
+### Patch global configuration (all fields optional)
+PATCH {{apiBase}}/v3/config/global/patch HTTP/1.1
+Content-Type: application/json
+
+{
+  "logLevel": "info",
+  "logDestinations": ["stdout"],
+  "readTimeout": "10s",
+  "writeTimeout": "10s",
+  "writeQueueSize": 512,
+  "api": true,
+  "apiAddress": ":9997",
+  "rtsp": true,
+  "rtmpEncryption": "no",
+  "hls": true,
+  "webrtc": true,
+  "srt": true,
+  "playback": true,
+  "playbackAddress": ":9996"
+}
+
+
+# ============================================================
+# Configuration — Path Defaults
+# ============================================================
+
+### Get default path configuration
+GET {{apiBase}}/v3/config/pathdefaults/get HTTP/1.1
+
+### Patch default path configuration (all fields optional)
+PATCH {{apiBase}}/v3/config/pathdefaults/patch HTTP/1.1
+Content-Type: application/json
+
+{
+  "source": "publisher",
+  "maxReaders": 0,
+  "record": false,
+  "recordPath": "./recordings/%path/%Y-%m-%d_%H-%M-%S-%f",
+  "recordFormat": "fmp4",
+  "recordPartDuration": "1s",
+  "recordSegmentDuration": "1h",
+  "recordDeleteAfter": "24h"
+}
+
+
+# ============================================================
+# Configuration — Paths
+# ============================================================
+
+### List all path configurations (paginated)
+GET {{apiBase}}/v3/config/paths/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific path configuration
+GET {{apiBase}}/v3/config/paths/get/{{pathName}} HTTP/1.1
+
+### Add a new path configuration
+POST {{apiBase}}/v3/config/paths/add/{{pathName}} HTTP/1.1
+Content-Type: application/json
+
+{
+  "source": "publisher",
+  "record": false,
+  "maxReaders": 0,
+  "runOnDemand": "",
+  "runOnReady": "",
+  "runOnRead": ""
+}
+
+### Patch (partially update) a path configuration
+PATCH {{apiBase}}/v3/config/paths/patch/{{pathName}} HTTP/1.1
+Content-Type: application/json
+
+{
+  "record": true,
+  "recordFormat": "fmp4",
+  "recordSegmentDuration": "1h"
+}
+
+### Replace (fully overwrite) a path configuration
+POST {{apiBase}}/v3/config/paths/replace/{{pathName}} HTTP/1.1
+Content-Type: application/json
+
+{
+  "source": "publisher",
+  "record": false,
+  "maxReaders": 10
+}
+
+### Delete a path configuration
+DELETE {{apiBase}}/v3/config/paths/delete/{{pathName}} HTTP/1.1
+
+
+# ============================================================
+# Paths (Runtime)
+# ============================================================
+
+### List all active paths
+GET {{apiBase}}/v3/paths/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific active path
+GET {{apiBase}}/v3/paths/get/{{pathName}} HTTP/1.1
+
+
+# ============================================================
+# HLS — Muxers
+# ============================================================
+
+### List all HLS muxers
+GET {{apiBase}}/v3/hlsmuxers/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific HLS muxer
+GET {{apiBase}}/v3/hlsmuxers/get/{{pathName}} HTTP/1.1
+
+
+# ============================================================
+# HLS — Sessions
+# ============================================================
+
+### List all HLS sessions
+GET {{apiBase}}/v3/hlssessions/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific HLS session
+GET {{apiBase}}/v3/hlssessions/get/{{sessionId}} HTTP/1.1
+
+### Kick a HLS session
+POST {{apiBase}}/v3/hlssessions/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTSP — Connections
+# ============================================================
+
+### List all RTSP connections
+GET {{apiBase}}/v3/rtspconns/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTSP connection
+GET {{apiBase}}/v3/rtspconns/get/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTSP — Sessions
+# ============================================================
+
+### List all RTSP sessions
+GET {{apiBase}}/v3/rtspsessions/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTSP session
+GET {{apiBase}}/v3/rtspsessions/get/{{sessionId}} HTTP/1.1
+
+### Kick a RTSP session
+POST {{apiBase}}/v3/rtspsessions/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTSPS — Connections
+# ============================================================
+
+### List all RTSPS connections
+GET {{apiBase}}/v3/rtspsconns/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTSPS connection
+GET {{apiBase}}/v3/rtspsconns/get/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTSPS — Sessions
+# ============================================================
+
+### List all RTSPS sessions
+GET {{apiBase}}/v3/rtspssessions/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTSPS session
+GET {{apiBase}}/v3/rtspssessions/get/{{sessionId}} HTTP/1.1
+
+### Kick a RTSPS session
+POST {{apiBase}}/v3/rtspssessions/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTMP — Connections
+# ============================================================
+
+### List all RTMP connections
+GET {{apiBase}}/v3/rtmpconns/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTMP connection
+GET {{apiBase}}/v3/rtmpconns/get/{{sessionId}} HTTP/1.1
+
+### Kick a RTMP connection
+POST {{apiBase}}/v3/rtmpconns/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# RTMPS — Connections
+# ============================================================
+
+### List all RTMPS connections
+GET {{apiBase}}/v3/rtmpsconns/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific RTMPS connection
+GET {{apiBase}}/v3/rtmpsconns/get/{{sessionId}} HTTP/1.1
+
+### Kick a RTMPS connection
+POST {{apiBase}}/v3/rtmpsconns/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# SRT — Connections
+# ============================================================
+
+### List all SRT connections
+GET {{apiBase}}/v3/srtconns/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific SRT connection
+GET {{apiBase}}/v3/srtconns/get/{{sessionId}} HTTP/1.1
+
+### Kick a SRT connection
+POST {{apiBase}}/v3/srtconns/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# WebRTC — Sessions
+# ============================================================
+
+### List all WebRTC sessions
+GET {{apiBase}}/v3/webrtcsessions/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific WebRTC session
+GET {{apiBase}}/v3/webrtcsessions/get/{{sessionId}} HTTP/1.1
+
+### Kick a WebRTC session
+POST {{apiBase}}/v3/webrtcsessions/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# MoQ — Sessions
+# ============================================================
+
+### List all MoQ sessions
+GET {{apiBase}}/v3/moqsessions/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get a specific MoQ session
+GET {{apiBase}}/v3/moqsessions/get/{{sessionId}} HTTP/1.1
+
+### Kick a MoQ session
+POST {{apiBase}}/v3/moqsessions/kick/{{sessionId}} HTTP/1.1
+
+
+# ============================================================
+# Recordings
+# ============================================================
+
+### List all recordings (grouped by path)
+GET {{apiBase}}/v3/recordings/list?page=0&itemsPerPage=100 HTTP/1.1
+
+### Get recordings for a specific path
+GET {{apiBase}}/v3/recordings/get/{{pathName}} HTTP/1.1
+
+### Delete a recording segment
+# 'path' = the stream path name, 'start' = segment start time (RFC 3339)
+DELETE {{apiBase}}/v3/recordings/deletesegment?path={{pathName}}&start=2024-01-01T00:00:00Z HTTP/1.1
+
+
+# ============================================================
+# Playback Server (port 9996)
+# Serves recorded segments for on-demand playback.
+# ============================================================
+
+### Stream a recorded segment (fmp4 format)
+# Replace the start param with a valid RFC 3339 timestamp from the recordings list
+GET {{recordingBase}}/{{pathName}}?start=2024-01-01T00:00:00Z HTTP/1.1
+

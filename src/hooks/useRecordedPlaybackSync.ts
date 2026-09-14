@@ -19,6 +19,7 @@ export interface RecordedPlaybackSyncBinding {
  *
  * - feeds the resolved playback endpoint and per-path interval data,
  * - resets the shared clock when the selected day changes,
+ * - pauses and resets the transport when the grid becomes empty,
  * - mirrors isPlaying/shared timestamp into the playback store for the UI,
  * - disposes the controller (releasing all media) on unmount/route change.
  */
@@ -53,6 +54,23 @@ export function useRecordedPlaybackSync(
       controller.setSpans(path, spans ?? null);
     }
   }, [controller, spansByPath]);
+
+  // An empty grid freezes the shared clock and resets the transport to its
+  // defaults. Derived from assigned paths, not tile lifecycles, so replacing
+  // a stream never pauses the grid mid-play.
+  const hasAssignedPaths = Object.keys(spansByPath).length > 0;
+  useEffect(() => {
+    if (hasAssignedPaths) return;
+
+    const dayRange = getDayRangeMs(usePlaybackSyncStore.getState().selectedDay);
+    controller.pause();
+    if (dayRange) controller.seekTo(dayRange.startMs);
+
+    const store = usePlaybackSyncStore.getState();
+    store.setIsPlaying(false);
+    store.setRate(1);
+    if (dayRange) store.setSharedTimestamp(dayRange.startMs);
+  }, [controller, hasAssignedPaths]);
 
   // Day changes pause the grid and reset the clock to local midnight.
   const selectedDay = usePlaybackSyncStore((s) => s.selectedDay);

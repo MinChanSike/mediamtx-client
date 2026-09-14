@@ -342,7 +342,7 @@ describe('playback page composition', () => {
 
   test('viewer shows a hover-only close button without a header', () => {
     expect(viewerSource).toContain('playback-viewer-close');
-    expect(viewerSource).toContain('DismissRegular');
+    expect(viewerSource).toContain('<CloseButton');
     expect(viewerSource).toContain('onClose: () => void');
     expect(viewerSource).not.toContain('PlaybackHeader');
   });

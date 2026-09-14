@@ -14,7 +14,7 @@ describe('Edit Stream drawer Add Stream parity', () => {
     const source = await Bun.file('src/components/streams/EditStreamDrawer.tsx').text();
 
     expect(source).toContain('ADD_STREAM_PROTOCOLS');
-    expect(source).toContain('ADD_STREAM_PLACEHOLDERS[protocol]');
+    expect(source).toContain('ADD_STREAM_PLACEHOLDERS[form.protocol]');
     expect(source).toContain('detectAddStreamProtocol');
     expect(source).not.toContain('const PROTOCOLS');
     expect(source).not.toContain("value: 'udp'");
@@ -39,24 +39,32 @@ describe('Edit Stream drawer Add Stream parity', () => {
     expect(ADD_STREAM_PLACEHOLDERS.whep).toBe('whep://server:8889/stream/whep');
   });
 
-  test('keeps Add Stream field order and inline actions while stream name remains read-only', async () => {
+  test('keeps Add Stream field order and inline actions while stream name is editable', async () => {
     const source = await Bun.file('src/components/streams/EditStreamDrawer.tsx').text();
 
-    expect(source.indexOf('label="Input Protocol"')).toBeLessThan(source.indexOf('label="Stream Name (read-only)"'));
-    expect(source.indexOf('label="Stream Name (read-only)"')).toBeLessThan(source.indexOf('label="Source URI"'));
-    expect(source).toContain('<Input id="edit-path-name" className="w-full" readOnly value={stream.name} />');
+    expect(source.indexOf('label="Input Protocol"')).toBeLessThan(source.indexOf('label="Stream Name"'));
+    expect(source.indexOf('label="Stream Name"')).toBeLessThan(source.indexOf('label="Source URI"'));
+    expect(source).toContain('id="edit-path-name"');
+    expect(source).toContain('value={form.pathName}');
+    expect(source).toContain('pathName: event.target.value');
+    expect(source).not.toContain('readOnly value={stream.name}');
     expect(source).toContain('<div className="flex justify-end gap-3">');
     expect(source).not.toContain('<DrawerFooter>');
   });
 
-  test('patches only the selected stream source URI', async () => {
+  test('submits stream rename metadata and preserves same-name source patch support', async () => {
     const editHookSource = await Bun.file('src/hooks/useEditStream.ts').text();
     const integrationSource = await Bun.file('src/hooks/useMediaMTXApi.ts').text();
     const drawerSource = await Bun.file('src/components/streams/EditStreamDrawer.tsx').text();
 
     expect(editHookSource).toContain("useStoreMutation<EditStreamInput>('editStream', runEditStreamMutation)");
-    expect(integrationSource).toContain('patchPath(input.pathName, input.sourceUri)');
-    expect(drawerSource).toContain('{ pathName: stream.name, sourceUri: sourceUri.trim() }');
+    expect(integrationSource).toContain('if (nextPathName === input.oldPathName)');
+    expect(integrationSource).toContain('await patchPath(input.oldPathName, nextSourceUri)');
+    expect(integrationSource).toContain('await addPathConfig(nextPathName, { source: nextSourceUri })');
+    expect(integrationSource).toContain('await deletePath(input.oldPathName)');
+    expect(drawerSource).toContain('oldPathName: stream.name');
+    expect(drawerSource).toContain('pathName: result.data.pathName');
+    expect(drawerSource).toContain('sourceUri: result.data.sourceUri');
     expect(drawerSource).not.toContain('pathName: sourceUri');
   });
 

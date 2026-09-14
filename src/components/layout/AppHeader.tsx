@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Input, Text } from '@fluentui/react-components';
-import { Checkmark24Regular, Dismiss24Regular, Edit24Regular } from '@fluentui/react-icons';
-import useCloseButtonStyles from '@src/components/common/useCloseButtonStyles';
+import { Checkmark24Regular, Edit24Regular } from '@fluentui/react-icons';
+import CloseButton from '@src/components/common/CloseButton';
 import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
 import useAppStore from '@src/store/useAppStore';
 import StatusBadge from '@src/components/common/StatusBadge';
@@ -9,7 +9,6 @@ import ThemeToggle from '@src/components/common/ThemeToggle';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
 
 export default function AppHeader() {
-  const closeButtonStyles = useCloseButtonStyles();
   const serverUrl = useAppStore((s) => s.serverUrl);
   const setServerUrl = useAppStore((s) => s.setServerUrl);
 
@@ -65,10 +64,8 @@ export default function AppHeader() {
               aria-label="Save MediaMTX API endpoint"
               onClick={handleSave}
             />
-            <Button
+            <CloseButton
               id="server-url-cancel"
-              className={closeButtonStyles.dangerHover}
-              icon={<Dismiss24Regular />}
               aria-label="Cancel MediaMTX API endpoint edit"
               onClick={handleCancel}
             />

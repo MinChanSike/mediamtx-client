@@ -41,6 +41,19 @@ interface RawConfigPathList {
 }
 
 const FALLBACK_CONFIG_PATH_NAME = '**all_others';
+const FALLBACK_RUNTIME_CONFIG_NAME = 'all_others';
+
+function isInactiveFallbackRuntimePath(item: RawPathItem) {
+  return (
+    item.confName === FALLBACK_RUNTIME_CONFIG_NAME &&
+    !item.source &&
+    item.online === false &&
+    item.available === false &&
+    item.ready === false &&
+    item.tracks.length === 0 &&
+    item.readers.length === 0
+  );
+}
 
 async function getAllPages<T extends { items: unknown[]; pageCount: number; itemCount: number }>(
   endpoint: string,
@@ -89,7 +102,7 @@ export async function getPathsList(serverUrl?: string): Promise<PathList> {
   );
 
   const mergedItems: PathItem[] = (runtimePaths.items || [])
-    .filter((item) => item.name !== FALLBACK_CONFIG_PATH_NAME)
+    .filter((item) => item.name !== FALLBACK_CONFIG_PATH_NAME && !isInactiveFallbackRuntimePath(item))
     .map((item: RawPathItem) => {
       const runtimePath = mapRuntimePath(item);
       const configuredPath = configPathsByName.get(item.name);
