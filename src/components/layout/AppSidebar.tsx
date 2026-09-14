@@ -30,6 +30,7 @@ import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, PLAYBACK_SYNC_ROUTE, STREAMS_ROUTE } f
 import useAppStore from '@src/store/useAppStore';
 import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
 import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
+import appLogo from '@src/assets/logo.png';
 
 type NavTab = 'dashboard' | 'streams' | 'playback' | 'playback-sync';
 
@@ -108,6 +109,13 @@ const useStyles = makeStyles({
     minWidth: 0,
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
+  },
+  brandLogo: {
+    width: '24px',
+    height: '24px',
+    flexShrink: 0,
+    objectFit: 'contain',
+    display: 'block',
   },
   brandMark: {
     display: 'grid',
@@ -302,9 +310,11 @@ export default function AppSidebar() {
       <div className={mergeClasses(styles.header, isSidebarCollapsed && styles.collapsedHeader)}>
         {!isSidebarCollapsed && (
           <div className={styles.brand}>
-            <span className={styles.brandMark} aria-hidden="true">
-              <SlideGrid20Filled />
-            </span>
+            <img
+              src={appLogo}
+              alt="MediaMTX"
+              className={styles.brandLogo}
+            />
             <div className={styles.titleGroup}>
               <Text weight="semibold" size={300} truncate>
                 MediaMTX

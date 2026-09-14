@@ -16,7 +16,7 @@ import {
 import {
   draggable,
   dropTargetForElements,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
   ChevronRight16Regular,
   CircleFilled,
@@ -33,7 +33,7 @@ import {
   buildStreamTree,
   type StreamTreeNode,
 } from "@src/components/streams/streamTree";
-import mediaMtxLogo from "@src/assets/logo-mediaMTX.svg";
+import appLogo from "@src/assets/logo.png";
 import {
   assignDroppedStream,
   createStreamAssignmentDragData,
@@ -45,10 +45,10 @@ interface MultiPlayerGridProps {
 }
 
 const GRID_DETAILS = {
-  "1x1": { slotCount: 1, columns: 1 },
-  "2x2": { slotCount: 4, columns: 2 },
-  "3x3": { slotCount: 9, columns: 3 },
-  "4x4": { slotCount: 16, columns: 4 },
+  '1x1': { slotCount: 1, columns: 1 },
+  '2x2': { slotCount: 4, columns: 2 },
+  '3x3': { slotCount: 9, columns: 3 },
+  '4x4': { slotCount: 16, columns: 4 },
 } as const;
 
 const useStyles = makeStyles({
@@ -181,7 +181,7 @@ const useStyles = makeStyles({
     outlineStyle: "none",
     boxShadow: "none",
     transitionDuration: tokens.durationFast,
-    transitionProperty: "background-color, box-shadow",
+    transitionProperty: 'background-color, box-shadow',
     transitionTimingFunction: tokens.curveEasyEase,
     ":hover": {
       backgroundColor: tokens.colorNeutralBackground1Hover,
@@ -456,7 +456,7 @@ function GridDropCell({
             className={mergeClasses("stream-grid-empty-copy", styles.emptyCopy)}
           >
             <img
-              src={mediaMtxLogo}
+              src={appLogo}
               alt="MediaMTX"
               className={mergeClasses(
                 styles.emptyLogo,
