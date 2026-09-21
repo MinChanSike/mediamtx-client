@@ -76,6 +76,8 @@ The user interface provides four main views: Dashboard, Streams, Playback, and P
 `-- vite.config.ts
 ```
 
+## Setup And Run
+
 ### MediaMTX Server Requirements
 
 Start a MediaMTX server with the API enabled. The default endpoints used by the client are:
