@@ -2,7 +2,7 @@
 
 MediaMTX Client is a browser-based management console for a [MediaMTX](https://mediamtx.org/) live media server and media proxy. It provides server health monitoring, live metrics inspection, configuration review, stream management, live video playback, recorded file review, and synchronized playback across multiple cameras.
 
-There is no need to install any software to use it. The application is accessible directly on GitHub Pages at https://minchansike.github.io/mediamtx-client or by opening `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached. Everything runs entirely in the browser and communicates directly with the MediaMTX server.
+There is no need to install any software to use it. The application is accessible directly on GitHub Pages at https://mediamtx-client.github.io/ or by opening `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached. Everything runs entirely in the browser and communicates directly with the MediaMTX server. If your browser can access the MediaMTX API, the client can access it too.
 
 This project also demonstrates a practical AI-assisted development process. Almost all the code was produced by AI agents, followed by manual code review. The work used AI-agent workflows, prompt engineering, media domain knowledge, and development tools to guide the agents, check output, improve implementation decisions, and turn media operations requirements into a functional interface.
 

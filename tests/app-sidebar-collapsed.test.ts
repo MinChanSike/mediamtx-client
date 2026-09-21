@@ -99,14 +99,6 @@ function getNavButtonByValue(root: ReactTestInstance, value: string) {
   return root.find((node) => node.type === 'button' && node.props.value === value);
 }
 
-function getPrimaryNav(root: ReactTestInstance) {
-  return root.find(
-    (node) =>
-      node.props['aria-label'] === 'Primary navigation' &&
-      typeof node.props.onNavItemSelect === 'function'
-  );
-}
-
 beforeEach(() => {
   installGlobalConfigMock();
   currentRoutePathname = '/';
@@ -176,7 +168,6 @@ describe('collapsed AppSidebar behavior', () => {
   test('rendered collapsed navigation items keep labels and navigate through React Router', async () => {
     await renderSidebar();
 
-    const primaryNav = getPrimaryNav(renderer!.root);
     const dashboardButton = getNavButtonByValue(renderer!.root, 'dashboard');
     const streamsButton = getNavButtonByValue(renderer!.root, 'streams');
     expect(dashboardButton.props.title).toBe('Dashboard');
@@ -189,23 +180,48 @@ describe('collapsed AppSidebar behavior', () => {
     const clickEvent = {
       defaultPrevented: false,
       preventDefault: () => undefined,
+      target: { nodeName: 'path', namespaceURI: 'http://www.w3.org/2000/svg' },
     };
 
     await act(async () => {
-      streamsButton.props.onClick?.(clickEvent);
-      primaryNav.props.onNavItemSelect(clickEvent, { value: 'streams' });
+      streamsButton.props.onClick(clickEvent);
       await flushMicrotasks();
     });
     expect(useAppStore.getState().activeTab).toBe('streams');
     expect(currentRoutePathname).toBe('/streams');
 
     await act(async () => {
-      dashboardButton.props.onClick?.(clickEvent);
-      primaryNav.props.onNavItemSelect(clickEvent, { value: 'dashboard' });
+      dashboardButton.props.onClick(clickEvent);
       await flushMicrotasks();
     });
     expect(useAppStore.getState().activeTab).toBe('dashboard');
     expect(currentRoutePathname).toBe('/');
+  });
+
+  test.each([true, false])('icon clicks navigate every route when collapsed=%s', async (collapsed) => {
+    useAppStore.setState({ isSidebarCollapsed: collapsed });
+    await renderSidebar();
+
+    for (const [value, path] of [
+      ['streams', '/streams'],
+      ['playback', '/playback'],
+      ['playback-sync', '/playback-sync'],
+      ['dashboard', '/'],
+    ]) {
+      await act(async () => {
+        getNavButtonByValue(renderer!.root, value).props.onClick({
+          defaultPrevented: false,
+          preventDefault: () => undefined,
+          target: { nodeName: 'svg', namespaceURI: 'http://www.w3.org/2000/svg' },
+        });
+        await flushMicrotasks();
+      });
+
+      expect(currentRoutePathname).toBe(path);
+      expect(useAppStore.getState().activeTab).toBe(value);
+      expect(getNavButtonByValue(renderer!.root, value).props['aria-current']).toBe('page');
+      expect(useAppStore.getState().isSidebarCollapsed).toBe(collapsed);
+    }
   });
 
   test('syncs collapsed sidebar selected state from the current route on initial render', async () => {
