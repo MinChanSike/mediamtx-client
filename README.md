@@ -78,8 +78,6 @@ The user interface provides four main views: Dashboard, Streams, Playback, and P
 
 ## Setup And Run
 
-Users do not need to install any software to use MediaMTX Client. Access the application directly at https://minchansike.github.io/mediamtx-client or double-click `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached.
-
 ### MediaMTX Server Requirements
 
 Start a MediaMTX server with the API enabled. The default endpoints used by the client are:

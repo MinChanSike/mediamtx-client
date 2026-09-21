@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Field,
@@ -10,29 +10,33 @@ import {
   makeStyles,
   mergeClasses,
   tokens,
-} from '@fluentui/react-components';
-import type { OnNavItemSelectData } from '@fluentui/react-components';
+} from "@fluentui/react-components";
+import type { OnNavItemSelectData } from "@fluentui/react-components";
 import {
   ChevronLeft20Regular,
   CircleFilled,
   History24Regular,
   Home24Regular,
-  SlideGrid20Filled,
   Settings24Regular,
   Video24Regular,
   VideoClip24Regular,
-} from '@fluentui/react-icons';
-import { useLocation, useNavigate } from 'react-router-dom';
-import ThemeToggle from '@src/components/common/ThemeToggle';
-import { useStoreBackedServerInfo } from '@src/hooks/useMediaMTXApi';
-import { usePlaybackSyncEndpoint } from '@src/hooks/usePlaybackSyncEndpoint';
-import { DASHBOARD_ROUTE, PLAYBACK_ROUTE, PLAYBACK_SYNC_ROUTE, STREAMS_ROUTE } from '@src/router/routes';
-import useAppStore from '@src/store/useAppStore';
-import usePlaybackSyncStore from '@src/store/usePlaybackSyncStore';
-import { getApiAvailabilityStatus } from '@src/utils/apiAvailabilityStatus';
-import appLogo from '@src/assets/logo.png';
+} from "@fluentui/react-icons";
+import { useLocation, useNavigate } from "react-router-dom";
+import ThemeToggle from "@src/components/common/ThemeToggle";
+import { useStoreBackedServerInfo } from "@src/hooks/useMediaMTXApi";
+import { usePlaybackSyncEndpoint } from "@src/hooks/usePlaybackSyncEndpoint";
+import {
+  DASHBOARD_ROUTE,
+  PLAYBACK_ROUTE,
+  PLAYBACK_SYNC_ROUTE,
+  STREAMS_ROUTE,
+} from "@src/router/routes";
+import useAppStore from "@src/store/useAppStore";
+import usePlaybackSyncStore from "@src/store/usePlaybackSyncStore";
+import { getApiAvailabilityStatus } from "@src/utils/apiAvailabilityStatus";
+import appLogo from "@src/assets/logo.png";
 
-type NavTab = 'dashboard' | 'streams' | 'playback' | 'playback-sync';
+type NavTab = "dashboard" | "streams" | "playback" | "playback-sync";
 
 type SidebarNavItem = {
   id: NavTab;
@@ -43,26 +47,26 @@ type SidebarNavItem = {
 
 const NAV_ITEMS: SidebarNavItem[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
+    id: "dashboard",
+    label: "Dashboard",
     path: DASHBOARD_ROUTE,
     icon: <Home24Regular />,
   },
   {
-    id: 'streams',
-    label: 'Streams',
+    id: "streams",
+    label: "Streams",
     path: STREAMS_ROUTE,
     icon: <Video24Regular />,
   },
   {
-    id: 'playback',
-    label: 'Playback',
+    id: "playback",
+    label: "Playback",
     path: PLAYBACK_ROUTE,
     icon: <VideoClip24Regular />,
   },
   {
-    id: 'playback-sync',
-    label: 'Playback Sync',
+    id: "playback-sync",
+    label: "Playback Sync",
     path: PLAYBACK_SYNC_ROUTE,
     icon: <History24Regular />,
   },
@@ -70,82 +74,96 @@ const NAV_ITEMS: SidebarNavItem[] = [
 
 const useStyles = makeStyles({
   root: {
-    position: 'relative',
-    display: 'flex',
-    height: '100%',
+    position: "relative",
+    display: "flex",
+    height: "100%",
     flexShrink: 0,
-    flexDirection: 'column',
+    flexDirection: "column",
     borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground2,
     color: tokens.colorNeutralForeground1,
     transitionDuration: tokens.durationNormal,
-    transitionProperty: 'width',
+    transitionProperty: "width",
     transitionTimingFunction: tokens.curveEasyEase,
   },
   expanded: {
-    width: '224px',
+    width: "224px",
   },
   collapsed: {
-    width: '52px',
+    width: "52px",
   },
   header: {
-    display: 'flex',
-    height: '56px',
+    display: "flex",
+    height: "56px",
     flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalS,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     paddingRight: tokens.spacingHorizontalS,
     paddingLeft: tokens.spacingHorizontalM,
   },
   collapsedHeader: {
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingRight: tokens.spacingHorizontalXS,
     paddingLeft: tokens.spacingHorizontalXS,
   },
   brand: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
-    alignItems: 'center',
+    alignItems: "center",
     gap: tokens.spacingHorizontalS,
   },
   brandLogo: {
-    width: '24px',
-    height: '24px',
+    width: "32px",
+    height: "32px",
     flexShrink: 0,
-    objectFit: 'contain',
-    display: 'block',
+    objectFit: "contain",
+    display: "block",
   },
   brandMark: {
-    display: 'grid',
-    width: '24px',
-    height: '24px',
+    display: "grid",
+    width: "24px",
+    height: "24px",
     flexShrink: 0,
-    placeItems: 'center',
+    placeItems: "center",
     border: `${tokens.strokeWidthThin} solid ${tokens.colorBrandStroke1}`,
     backgroundColor: tokens.colorBrandBackground2,
     color: tokens.colorBrandForeground1,
   },
   collapsedBrandButton: {
-    minWidth: '32px',
-    width: '32px',
-    height: '32px',
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorBrandStroke1}`,
-    backgroundColor: tokens.colorBrandBackground2,
-    color: tokens.colorBrandForeground1,
+    minWidth: "40px",
+    width: "40px",
+    height: "40px",
+    border: "none",
+    padding: 0,
+    backgroundColor: "transparent",
+    ":hover": {
+      backgroundColor: "transparent",
+    },
+    ":active": {
+      backgroundColor: "transparent",
+    },
+  },
+  collapsedBrandLogo: {
+    width: "36px",
+    height: "36px",
+    filter: "drop-shadow(1px 1px 1px #00000050)",
+    ":hover": {
+      filter: "drop-shadow(1px 1px 1px #000000)",
+    },
   },
   titleGroup: {
-    display: 'flex',
+    display: "flex",
     minWidth: 0,
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   statusDot: {
-    width: '10px',
-    height: '10px',
+    width: "10px",
+    height: "10px",
     flexShrink: 0,
-    marginLeft: 'auto',
-    alignSelf: 'flex-start',
+    marginLeft: "auto",
+    alignSelf: "flex-start",
     color: tokens.colorNeutralForeground4,
   },
   statusDotOnline: {
@@ -157,8 +175,8 @@ const useStyles = makeStyles({
   },
   nav: {
     flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     rowGap: tokens.spacingVerticalXS,
     paddingTop: tokens.spacingVerticalS,
     paddingRight: tokens.spacingHorizontalXS,
@@ -169,58 +187,64 @@ const useStyles = makeStyles({
     paddingLeft: tokens.spacingHorizontalXXS,
   },
   navItem: {
-    minHeight: '40px',
-    alignItems: 'center',
-    ':hover': {
+    minHeight: "40px",
+    alignItems: "center",
+    ":hover": {
       backgroundColor: tokens.colorNeutralBackground1Hover,
     },
-    '::after': {
-      marginLeft: '-10px',
+    "::after": {
+      marginLeft: "-10px",
     },
   },
   collapsedNavItem: {
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingRight: tokens.spacingHorizontalXS,
     paddingLeft: tokens.spacingHorizontalXS,
-    '::after': {
-      marginLeft: '-42px',
+    "::after": {
+      marginLeft: "-42px",
     },
   },
   editPanel: {
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: tokens.spacingVerticalS,
     borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     padding: tokens.spacingVerticalM,
   },
   editActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
+    display: "flex",
+    justifyContent: "flex-end",
     gap: tokens.spacingHorizontalXS,
   },
   footer: {
-    display: 'flex',
-    minHeight: '52px',
+    display: "flex",
+    minHeight: "52px",
     flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalS,
     borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     paddingRight: tokens.spacingHorizontalM,
     paddingLeft: tokens.spacingHorizontalM,
   },
   collapsedFooter: {
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: tokens.spacingHorizontalXS,
   },
 });
 
 export function pathToTab(pathname: string): NavTab {
-  if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`)) return 'streams';
-  if (pathname === PLAYBACK_ROUTE || pathname.startsWith(`${PLAYBACK_ROUTE}/`)) return 'playback';
-  if (pathname === PLAYBACK_SYNC_ROUTE || pathname.startsWith(`${PLAYBACK_SYNC_ROUTE}/`)) return 'playback-sync';
-  return 'dashboard';
+  if (pathname === STREAMS_ROUTE || pathname.startsWith(`${STREAMS_ROUTE}/`))
+    return "streams";
+  if (pathname === PLAYBACK_ROUTE || pathname.startsWith(`${PLAYBACK_ROUTE}/`))
+    return "playback";
+  if (
+    pathname === PLAYBACK_SYNC_ROUTE ||
+    pathname.startsWith(`${PLAYBACK_SYNC_ROUTE}/`)
+  )
+    return "playback-sync";
+  return "dashboard";
 }
 
 export function expandCollapsedSidebar(toggleSidebar: () => void) {
@@ -228,9 +252,9 @@ export function expandCollapsedSidebar(toggleSidebar: () => void) {
 }
 
 export function navigateToSidebarItem(
-  item: Pick<SidebarNavItem, 'id' | 'path'>,
+  item: Pick<SidebarNavItem, "id" | "path">,
   setActiveTab: (tab: NavTab) => void,
-  navigate: (path: string) => void
+  navigate: (path: string) => void,
 ) {
   setActiveTab(item.id);
   navigate(item.path);
@@ -246,13 +270,15 @@ export default function AppSidebar() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const serverUrl = useAppStore((s) => s.serverUrl);
   const setServerUrl = useAppStore((s) => s.setServerUrl);
-  const setPlaybackEndpointOverride = usePlaybackSyncStore((s) => s.setEndpointOverride);
+  const setPlaybackEndpointOverride = usePlaybackSyncStore(
+    (s) => s.setEndpointOverride,
+  );
   const playbackEndpoint = usePlaybackSyncEndpoint();
 
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState(serverUrl);
   const [playbackUrlInput, setPlaybackUrlInput] = useState(
-    playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? ''
+    playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? "",
   );
 
   useEffect(() => {
@@ -261,7 +287,9 @@ export default function AppSidebar() {
 
   useEffect(() => {
     if (!isEditing) {
-      setPlaybackUrlInput(playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? '');
+      setPlaybackUrlInput(
+        playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? "",
+      );
     }
   }, [isEditing, playbackEndpoint.baseUrl, playbackEndpoint.derivedBaseUrl]);
 
@@ -283,7 +311,10 @@ export default function AppSidebar() {
     if (!nextServerUrl) return;
 
     const nextPlaybackUrl = playbackUrlInput.trim();
-    if (nextPlaybackUrl === playbackEndpoint.derivedBaseUrl || !nextPlaybackUrl) {
+    if (
+      nextPlaybackUrl === playbackEndpoint.derivedBaseUrl ||
+      !nextPlaybackUrl
+    ) {
       setPlaybackEndpointOverride(nextServerUrl, null);
     } else {
       setPlaybackEndpointOverride(nextServerUrl, nextPlaybackUrl);
@@ -294,27 +325,33 @@ export default function AppSidebar() {
 
   const handleCancel = () => {
     setUrlInput(serverUrl);
-    setPlaybackUrlInput(playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? '');
+    setPlaybackUrlInput(
+      playbackEndpoint.baseUrl ?? playbackEndpoint.derivedBaseUrl ?? "",
+    );
     setIsEditing(false);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') handleSave();
-    else if (event.key === 'Escape') handleCancel();
+    if (event.key === "Enter") handleSave();
+    else if (event.key === "Escape") handleCancel();
   };
 
   return (
     <aside
-      className={mergeClasses(styles.root, isSidebarCollapsed ? styles.collapsed : styles.expanded)}
+      className={mergeClasses(
+        styles.root,
+        isSidebarCollapsed ? styles.collapsed : styles.expanded,
+      )}
     >
-      <div className={mergeClasses(styles.header, isSidebarCollapsed && styles.collapsedHeader)}>
+      <div
+        className={mergeClasses(
+          styles.header,
+          isSidebarCollapsed && styles.collapsedHeader,
+        )}
+      >
         {!isSidebarCollapsed && (
           <div className={styles.brand}>
-            <img
-              src={appLogo}
-              alt="MediaMTX"
-              className={styles.brandLogo}
-            />
+            <img src={appLogo} alt="MediaMTX" className={styles.brandLogo} />
             <div className={styles.titleGroup}>
               <Text weight="semibold" size={300} truncate>
                 MediaMTX
@@ -327,7 +364,7 @@ export default function AppSidebar() {
               aria-label="MediaMTX API status indicator"
               className={mergeClasses(
                 styles.statusDot,
-                connectionStatus === 'online' && styles.statusDotOnline
+                connectionStatus === "online" && styles.statusDotOnline,
               )}
             />
           </div>
@@ -335,11 +372,23 @@ export default function AppSidebar() {
         {isSidebarCollapsed ? (
           <Button
             aria-label="Expand sidebar"
-            appearance="subtle"
+            appearance="transparent"
             className={styles.collapsedBrandButton}
-            icon={<SlideGrid20Filled />}
+            icon={{
+              className: styles.collapsedBrandLogo,
+              children: (
+                <img
+                  src={appLogo}
+                  alt=""
+                  className={mergeClasses(
+                    styles.brandLogo,
+                    styles.collapsedBrandLogo,
+                  )}
+                />
+              ),
+            }}
             onClick={() => expandCollapsedSidebar(toggleSidebar)}
-            size="small"
+            size="medium"
           />
         ) : (
           <Tooltip content="Collapse sidebar" relationship="label">
@@ -356,7 +405,10 @@ export default function AppSidebar() {
 
       <Nav
         aria-label="Primary navigation"
-        className={mergeClasses(styles.nav, isSidebarCollapsed && styles.collapsedNav)}
+        className={mergeClasses(
+          styles.nav,
+          isSidebarCollapsed && styles.collapsedNav,
+        )}
         density="small"
         onNavItemSelect={handleNavSelect}
         selectedValue={activeTab}
@@ -374,7 +426,7 @@ export default function AppSidebar() {
               value={item.id}
               className={mergeClasses(
                 styles.navItem,
-                isSidebarCollapsed && styles.collapsedNavItem
+                isSidebarCollapsed && styles.collapsedNavItem,
               )}
             >
               {isSidebarCollapsed ? null : item.label}
@@ -417,7 +469,12 @@ export default function AppSidebar() {
             >
               Cancel
             </Button>
-            <Button id="server-url-save" appearance="primary" onClick={handleSave} size="small">
+            <Button
+              id="server-url-save"
+              appearance="primary"
+              onClick={handleSave}
+              size="small"
+            >
               Save
             </Button>
           </div>
@@ -431,7 +488,7 @@ export default function AppSidebar() {
               id="server-url-edit-btn"
               aria-expanded={isEditing}
               aria-label="Edit server endpoints"
-              appearance={isEditing ? 'secondary' : 'subtle'}
+              appearance={isEditing ? "secondary" : "subtle"}
               icon={<Settings24Regular />}
               onClick={() => setIsEditing((current) => !current)}
               size="small"
