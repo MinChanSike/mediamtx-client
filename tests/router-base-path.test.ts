@@ -149,14 +149,6 @@ async function flushMicrotasks() {
   }
 }
 
-function getPrimaryNav(root: ReactTestInstance) {
-  return root.find(
-    (node) =>
-      node.props['aria-label'] === 'Primary navigation' &&
-      typeof node.props.onNavItemSelect === 'function'
-  );
-}
-
 function getNavButtonByValue(root: ReactTestInstance, value: string) {
   return root.find((node) => node.type === 'button' && node.props.value === value);
 }
@@ -224,16 +216,15 @@ describe('React Router hash routing', () => {
       await flushMicrotasks();
     });
 
-    const primaryNav = getPrimaryNav(renderer!.root);
     const streamsButton = getNavButtonByValue(renderer!.root, 'streams');
     const clickEvent = {
       defaultPrevented: false,
       preventDefault: () => undefined,
+      target: { nodeName: 'path', namespaceURI: 'http://www.w3.org/2000/svg' },
     };
 
     await act(async () => {
-      streamsButton.props.onClick?.(clickEvent);
-      primaryNav.props.onNavItemSelect(clickEvent, { value: 'streams' });
+      streamsButton.props.onClick(clickEvent);
       await flushMicrotasks();
     });
 

@@ -11,7 +11,6 @@ import {
   mergeClasses,
   tokens,
 } from "@fluentui/react-components";
-import type { OnNavItemSelectData } from "@fluentui/react-components";
 import {
   ChevronLeft20Regular,
   CircleFilled,
@@ -301,11 +300,6 @@ export default function AppSidebar() {
 
   const connectionStatus = getApiAvailabilityStatus({ isError, isPending });
 
-  const handleNavSelect = (_event: unknown, data: OnNavItemSelectData) => {
-    const item = NAV_ITEMS.find((candidate) => candidate.id === data.value);
-    if (item) navigateToSidebarItem(item, setActiveTab, navigate);
-  };
-
   const handleSave = () => {
     const nextServerUrl = urlInput.trim();
     if (!nextServerUrl) return;
@@ -410,7 +404,6 @@ export default function AppSidebar() {
           isSidebarCollapsed && styles.collapsedNav,
         )}
         density="small"
-        onNavItemSelect={handleNavSelect}
         selectedValue={activeTab}
       >
         {NAV_ITEMS.map((item) => (
@@ -422,6 +415,8 @@ export default function AppSidebar() {
           >
             <NavItem
               icon={item.icon}
+              // Nav's selection callback ignores SVG targets; handle icon clicks here.
+              onClick={() => navigateToSidebarItem(item, setActiveTab, navigate)}
               title={isSidebarCollapsed ? item.label : undefined}
               value={item.id}
               className={mergeClasses(

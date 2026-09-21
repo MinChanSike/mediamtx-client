@@ -133,20 +133,6 @@ describe('raw config toggle placement and state', () => {
     expect(sidebarSource).toContain('onClick={() => expandCollapsedSidebar(toggleSidebar)}');
   });
 
-  test('keeps collapsed sidebar navigation labels on the React Router navigation path', async () => {
-    const sidebarSource = await Bun.file('src/components/layout/AppSidebar.tsx').text();
-
-    expect(sidebarSource).toContain('const handleNavSelect');
-    expect(sidebarSource).toContain('navigateToSidebarItem(item, setActiveTab, navigate)');
-    expect(sidebarSource).toContain('useNavigate');
-    expect(sidebarSource).not.toContain('history.pushState');
-    expect(sidebarSource).toContain('onNavItemSelect={handleNavSelect}');
-    expect(sidebarSource).toContain('value={item.id}');
-    expect(sidebarSource).toContain('content={item.label}');
-    expect(sidebarSource).toContain('title={isSidebarCollapsed ? item.label : undefined}');
-    expect(sidebarSource).toContain('{isSidebarCollapsed ? null : item.label}');
-  });
-
   test('owns the raw config drawer state and control in DashboardPage', async () => {
     const dashboardSource = await Bun.file('src/pages/DashboardPage.tsx').text();
 
