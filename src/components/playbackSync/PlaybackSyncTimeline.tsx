@@ -1,9 +1,20 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import type { NormalizedSpan } from '@src/utils/playbackSyncIntervals';
-import { clipSpansToRange, findSpanAt } from '@src/utils/playbackSyncIntervals';
-import { formatLocalTimeOfDay, getDayRangeMs } from '@src/utils/playbackSyncTime';
+import { useCallback, useRef, useState } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import {
+  Text,
+  makeStyles,
+  mergeClasses,
+  tokens,
+} from "@fluentui/react-components";
+import type { NormalizedSpan } from "@src/utils/playbackSyncIntervals";
+import { clipSpansToRange, findSpanAt } from "@src/utils/playbackSyncIntervals";
+import {
+  formatLocalTimeOfDay,
+  getDayRangeMs,
+} from "@src/utils/playbackSyncTime";
 
 export interface TimelineLane {
   slot: number;
@@ -20,136 +31,194 @@ interface PlaybackTimelineProps {
 
 const useStyles = makeStyles({
   root: {
-    boxSizing: 'border-box',
-    display: 'flex',
-    height: '108px',
-    minHeight: '108px',
+    boxSizing: "border-box",
+    display: "flex",
+    height: "108px",
+    minHeight: "108px",
     flexShrink: 0,
-    flexDirection: 'column',
+    flexDirection: "column",
     borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderLeft: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
+    userSelect: "none",
+    WebkitUserSelect: "none",
   },
   track: {
-    position: 'relative',
-    display: 'flex',
+    position: "relative",
+    display: "flex",
     minHeight: 0,
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
   },
   ruler: {
-    position: 'relative',
-    height: '18px',
+    position: "relative",
+    height: "22px",
     flexShrink: 0,
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
+    overflow: "hidden",
   },
-  rulerTick: {
-    position: 'absolute',
+  rulerLabel: {
+    position: "absolute",
     top: 0,
-    transform: 'translateX(-50%)',
-    paddingRight: tokens.spacingHorizontalXS,
-    paddingLeft: tokens.spacingHorizontalXS,
-    whiteSpace: 'nowrap',
-    '@media (max-width: 720px)': {
-      ':nth-child(even)': {
-        display: 'none',
+    fontSize: tokens.fontSizeBase100,
+    lineHeight: tokens.lineHeightBase100,
+    color: tokens.colorNeutralForeground3,
+    fontFamily: tokens.fontFamilyMonospace,
+    whiteSpace: "nowrap",
+    userSelect: "none",
+    pointerEvents: "none",
+    "@media (max-width: 900px)": {
+      ":nth-child(even)": {
+        display: "none",
       },
     },
   },
+  rulerBaseline: {
+    position: "absolute",
+    top: "21px",
+    left: 0,
+    right: 0,
+    height: "1px",
+    backgroundColor: tokens.colorNeutralForeground1,
+  },
+  rulerTickTall: {
+    position: "absolute",
+    top: "13px",
+    width: "2px",
+    height: "8px",
+    marginLeft: "-1px",
+    backgroundColor: tokens.colorNeutralForeground1,
+  },
+  rulerTickMedium: {
+    position: "absolute",
+    top: "15px",
+    width: "1px",
+    height: "6px",
+    marginLeft: "-0.5px",
+    backgroundColor: tokens.colorNeutralForeground1,
+  },
+  rulerTickSmall: {
+    position: "absolute",
+    top: "18px",
+    width: "1px",
+    height: "3px",
+    marginLeft: "-0.5px",
+    backgroundColor: tokens.colorNeutralForeground3,
+  },
   lanes: {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '3px',
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    gap: "3px",
   },
   lane: {
-    position: 'relative',
-    height: '14px',
-    overflow: 'hidden',
+    position: "relative",
+    height: "14px",
+    overflow: "hidden",
     borderRadius: tokens.borderRadiusSmall,
     backgroundColor: tokens.colorNeutralBackground3,
   },
   laneLabel: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,
-    display: 'flex',
-    alignItems: 'center',
-    maxWidth: '30%',
+    display: "flex",
+    alignItems: "center",
+    maxWidth: "30%",
     zIndex: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
     paddingLeft: tokens.spacingHorizontalXS,
     fontFamily: tokens.fontFamilyMonospace,
     fontSize: tokens.fontSizeBase200,
     lineHeight: tokens.lineHeightBase200,
     color: tokens.colorNeutralForeground3,
-    pointerEvents: 'none',
+    pointerEvents: "none",
     textShadow: `0 0 4px ${tokens.colorNeutralBackground1}`,
-    whiteSpace: 'nowrap',
+    whiteSpace: "nowrap",
   },
   coverage: {
-    position: 'absolute',
-    top: '2px',
-    bottom: '2px',
-    borderRadius: '2px',
-    backgroundColor: tokens.colorPaletteGreenForeground2,
+    position: "absolute",
+    top: "2px",
+    bottom: "2px",
+    borderRadius: "2px",
+    backgroundColor: "#d13438",
   },
   coverageActive: {
-    backgroundColor: tokens.colorPaletteLightGreenForeground1,
+    backgroundColor: "#f1707b",
     outline: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralForeground1}`,
   },
   cursor: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
-    width: '2px',
-    marginLeft: '-1px',
-    zIndex: 2,
+    width: "2px",
+    marginLeft: "-1px",
+    zIndex: 3,
     backgroundColor: tokens.colorBrandForeground1,
-    pointerEvents: 'none',
-  },
-  cursorTime: {
-    position: 'absolute',
-    bottom: 0,
-    transform: 'translateX(-50%)',
-    zIndex: 2,
-    paddingRight: tokens.spacingHorizontalS,
-    paddingLeft: tokens.spacingHorizontalS,
-    borderRadius: tokens.borderRadiusSmall,
-    backgroundColor: tokens.colorBrandBackground2,
-    color: tokens.colorBrandForeground2,
-    fontFamily: tokens.fontFamilyMonospace,
-    fontSize: tokens.fontSizeBase100,
-    lineHeight: tokens.lineHeightBase100,
-    pointerEvents: 'none',
-    whiteSpace: 'nowrap',
+    pointerEvents: "none",
   },
   preview: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
-    width: '1px',
+    width: "1px",
     zIndex: 2,
     backgroundColor: tokens.colorNeutralForeground3,
-    pointerEvents: 'none',
+    pointerEvents: "none",
   },
   emptyLanes: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '32px',
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "32px",
     color: tokens.colorNeutralForeground3,
   },
 });
 
-const HOUR_LABEL_STEP = 3;
+const RULER_DIVISIONS = 24 * 8;
+
+const HOUR_MARKS = Array.from({ length: 25 }, (_, hour) => ({
+  hour,
+  label: String(hour).padStart(2, "0"),
+  percent: (hour / 24) * 100,
+}));
+
+interface RulerTick {
+  index: number;
+  type: "tall" | "medium" | "small";
+  percent: number;
+  timeLabel: string;
+}
+
+const RULER_TICKS: RulerTick[] = Array.from(
+  { length: RULER_DIVISIONS + 1 },
+  (_, i) => {
+    const hour = Math.floor(i / 8);
+    const minuteFrac = (i % 8) * 7.5;
+    const minute = Math.floor(minuteFrac);
+    const second = Math.round((minuteFrac - minute) * 60);
+    const timeLabel = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}${
+      second > 0 ? `:${String(second).padStart(2, "0")}` : ""
+    }`;
+
+    let type: "tall" | "medium" | "small" = "small";
+    if (i % 8 === 0) {
+      type = "tall";
+    } else if (i % 8 === 4) {
+      type = "medium";
+    }
+
+    return {
+      index: i,
+      type,
+      percent: (i / RULER_DIVISIONS) * 100,
+      timeLabel,
+    };
+  },
+);
 
 function percentOf(value: number, startMs: number, totalMs: number): number {
   if (totalMs <= 0) return 0;
@@ -161,7 +230,12 @@ function percentOf(value: number, startMs: number, totalMs: number): number {
  * stream renders an availability lane with visible gaps; the shared cursor
  * tracks the shared clock and supports click and drag seeking.
  */
-export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek }: PlaybackTimelineProps) {
+export default function PlaybackSyncTimeline({
+  lanes,
+  dayKey,
+  positionMs,
+  onSeek,
+}: PlaybackTimelineProps) {
   const styles = useStyles();
   const trackRef = useRef<HTMLDivElement>(null);
   // The ref tracks the active scrub synchronously so a pointerup in the same
@@ -187,7 +261,7 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
       const ratio = (clientX - rect.left) / rect.width;
       return startMs + Math.min(Math.max(ratio, 0), 1) * totalMs;
     },
-    [startMs, totalMs]
+    [startMs, totalMs],
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -222,10 +296,10 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
     const stepMs = event.shiftKey ? 10 * 60 * 1000 : 60 * 1000;
     let targetMs: number | null = null;
 
-    if (event.key === 'ArrowLeft') targetMs = positionMs - stepMs;
-    else if (event.key === 'ArrowRight') targetMs = positionMs + stepMs;
-    else if (event.key === 'Home') targetMs = startMs;
-    else if (event.key === 'End') targetMs = startMs + totalMs - 1;
+    if (event.key === "ArrowLeft") targetMs = positionMs - stepMs;
+    else if (event.key === "ArrowRight") targetMs = positionMs + stepMs;
+    else if (event.key === "Home") targetMs = startMs;
+    else if (event.key === "End") targetMs = startMs + totalMs - 1;
 
     if (targetMs === null) return;
     event.preventDefault();
@@ -237,22 +311,6 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
   const cursorPercent = percentOf(positionMs, startMs, totalMs);
   const previewPercent =
     previewMs !== null ? percentOf(previewMs, startMs, totalMs) : null;
-  const cursorLabelMs = previewMs !== null ? previewMs : positionMs;
-
-  const hourMarks = useMemo(() => {
-    const marks: Array<{ hour: number; label: string }> = [];
-    for (let hour = 0; hour <= 24; hour += 1) {
-      const isEnd = hour === 24;
-      if (!isEnd && hour % HOUR_LABEL_STEP !== 0) continue;
-      marks.push({
-        hour,
-        label: isEnd
-          ? '24:00'
-          : `${`${hour}`.padStart(2, '0')}:00`,
-      });
-    }
-    return marks;
-  }, []);
 
   return (
     <div className={styles.root} aria-label="Recording availability timeline">
@@ -272,15 +330,39 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
         onPointerCancel={() => setPreview(null)}
         onKeyDown={handleKeyDown}
       >
-        <div className={styles.ruler}>
-          {hourMarks.map((mark) => (
-            <span
-              key={mark.hour}
-              className={styles.rulerTick}
-              style={{ left: `${(mark.hour / 24) * 100}%` }}
-            >
-              {mark.label}
-            </span>
+        <div className={styles.ruler} aria-hidden="true">
+          {HOUR_MARKS.map((mark) => {
+            let transform = "translateX(-50%)";
+            if (mark.hour === 0) transform = "translateX(0)";
+            else if (mark.hour === 24) transform = "translateX(-100%)";
+
+            return (
+              <span
+                key={mark.hour}
+                className={styles.rulerLabel}
+                style={{
+                  left: `${mark.percent}%`,
+                  transform,
+                }}
+              >
+                {mark.label}
+              </span>
+            );
+          })}
+          <div className={styles.rulerBaseline} />
+          {RULER_TICKS.map((tick) => (
+            <div
+              key={tick.index}
+              className={
+                tick.type === "tall"
+                  ? styles.rulerTickTall
+                  : tick.type === "medium"
+                    ? styles.rulerTickMedium
+                    : styles.rulerTickSmall
+              }
+              style={{ left: `${tick.percent}%` }}
+              title={tick.timeLabel}
+            />
           ))}
         </div>
 
@@ -294,7 +376,9 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
               const clipped = lane.spans
                 ? clipSpansToRange(lane.spans, startMs, startMs + totalMs)
                 : [];
-              const activeSpan = lane.spans ? findSpanAt(lane.spans, positionMs) : null;
+              const activeSpan = lane.spans
+                ? findSpanAt(lane.spans, positionMs)
+                : null;
 
               return (
                 <div
@@ -308,7 +392,10 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
                     return (
                       <div
                         key={`${block.source.startMs}-${index}`}
-                        className={mergeClasses(styles.coverage, isActive && styles.coverageActive)}
+                        className={mergeClasses(
+                          styles.coverage,
+                          isActive && styles.coverageActive,
+                        )}
                         style={{
                           left: `${percentOf(block.startMs, startMs, totalMs)}%`,
                           width: `${percentOf(block.endMs, startMs, totalMs) - percentOf(block.startMs, startMs, totalMs)}%`,
@@ -323,12 +410,12 @@ export default function PlaybackSyncTimeline({ lanes, dayKey, positionMs, onSeek
         </div>
 
         {previewPercent !== null && (
-          <div className={styles.preview} style={{ left: `${previewPercent}%` }} />
+          <div
+            className={styles.preview}
+            style={{ left: `${previewPercent}%` }}
+          />
         )}
         <div className={styles.cursor} style={{ left: `${cursorPercent}%` }} />
-        <span className={styles.cursorTime} style={{ left: `${cursorPercent}%` }}>
-          {formatLocalTimeOfDay(cursorLabelMs)}
-        </span>
       </div>
     </div>
   );
