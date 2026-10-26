@@ -16,7 +16,7 @@ import {
 import {
   draggable,
   dropTargetForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   ChevronRight16Regular,
   CircleFilled,
@@ -39,16 +39,17 @@ import {
   createStreamAssignmentDragData,
   isStreamAssignmentDragData,
 } from "@src/components/streams/streamDragData";
+import { isStreamRecordingEnabled } from "@src/utils/recordingStatus";
 
 interface MultiPlayerGridProps {
   streams: PathItem[];
 }
 
 const GRID_DETAILS = {
-  '1x1': { slotCount: 1, columns: 1 },
-  '2x2': { slotCount: 4, columns: 2 },
-  '3x3': { slotCount: 9, columns: 3 },
-  '4x4': { slotCount: 16, columns: 4 },
+  "1x1": { slotCount: 1, columns: 1 },
+  "2x2": { slotCount: 4, columns: 2 },
+  "3x3": { slotCount: 9, columns: 3 },
+  "4x4": { slotCount: 16, columns: 4 },
 } as const;
 
 const useStyles = makeStyles({
@@ -181,7 +182,7 @@ const useStyles = makeStyles({
     outlineStyle: "none",
     boxShadow: "none",
     transitionDuration: tokens.durationFast,
-    transitionProperty: 'background-color, box-shadow',
+    transitionProperty: "background-color, box-shadow",
     transitionTimingFunction: tokens.curveEasyEase,
     ":hover": {
       backgroundColor: tokens.colorNeutralBackground1Hover,
@@ -232,11 +233,83 @@ const useStyles = makeStyles({
   onlineStreamIcon: {
     color: tokens.colorPaletteLightGreenForeground3,
   },
+  cameraIconWrapper: {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "16px",
+    height: "16px",
+    flexShrink: 0,
+  },
+  cameraRecordingDot: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-84%, -50%)",
+    fontSize: "6px",
+    width: "6px",
+    height: "6px",
+    color: "#d13438",
+    animationName: {
+      from: { opacity: 1 },
+      "50%": { opacity: 0.25 },
+      to: { opacity: 1 },
+    },
+    animationDuration: "1.2s",
+    animationIterationCount: "infinite",
+    animationTimingFunction: "ease-in-out",
+    pointerEvents: "none",
+  },
   titleStatusIcon: {
     width: "8px",
     height: "8px",
     flexShrink: 0,
     color: tokens.colorPaletteLightGreenForeground3,
+  },
+  recordingIndicator: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "3px",
+  },
+  recordingDot: {
+    width: "8px",
+    height: "8px",
+    flexShrink: 0,
+    color: "#d13438",
+    animationName: {
+      from: { opacity: 1 },
+      "50%": { opacity: 0.25 },
+      to: { opacity: 1 },
+    },
+    animationDuration: "1.2s",
+    animationIterationCount: "infinite",
+    animationTimingFunction: "ease-in-out",
+  },
+  recordingText: {
+    color: "#d13438",
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    lineHeight: tokens.lineHeightBase100,
+  },
+  gridRecordingBadge: {
+    position: "absolute",
+    top: "6px",
+    left: "3px",
+    zIndex: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    padding: "2px 6px",
+    borderRadius: tokens.borderRadiusSmall,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    pointerEvents: "none",
+  },
+  gridRecordingText: {
+    color: "#ffffff",
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    lineHeight: tokens.lineHeightBase100,
   },
   clearButton: {
     pointerEvents: "auto",
@@ -319,6 +392,7 @@ function DraggableStream({ node, inset }: DraggableStreamProps) {
   const elementRef = useRef<ElementRef<"button">>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isOnline = isStreamOnline(node.stream);
+  const isRecording = isStreamRecordingEnabled(node.stream);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -342,13 +416,21 @@ function DraggableStream({ node, inset }: DraggableStreamProps) {
       )}
       style={{ paddingLeft: `calc(${inset} + 8px)` }}
     >
-      {isOnline ? (
-        <Video16Filled
-          className={mergeClasses(styles.streamIcon, styles.onlineStreamIcon)}
-        />
-      ) : (
-        <VideoOff16Regular className={styles.streamIcon} />
-      )}
+      <span className={styles.cameraIconWrapper}>
+        {isOnline ? (
+          <Video16Filled
+            className={mergeClasses(styles.streamIcon, styles.onlineStreamIcon)}
+          />
+        ) : (
+          <VideoOff16Regular className={styles.streamIcon} />
+        )}
+        {isRecording && (
+          <CircleFilled
+            className={styles.cameraRecordingDot}
+            aria-hidden="true"
+          />
+        )}
+      </span>
       <Text font="monospace" truncate>
         {node.label}
       </Text>
@@ -360,6 +442,7 @@ interface GridDropCellProps {
   index: number;
   gridLayout: keyof typeof GRID_DETAILS;
   streamName: string | null;
+  isRecording?: boolean;
   setGridStream: (slot: number, streamName: string) => void;
   clearGridStream: (slot: number) => void;
 }
@@ -396,6 +479,7 @@ function GridDropCell({
   index,
   gridLayout,
   streamName,
+  isRecording = false,
   setGridStream,
   clearGridStream,
 }: GridDropCellProps) {
@@ -429,8 +513,25 @@ function GridDropCell({
       {streamName ? (
         <>
           <VideoPlayer streamName={streamName} fillCell />
+          {isRecording && (
+            <div
+              className={styles.gridRecordingBadge}
+              title="Recording"
+              aria-label="Recording"
+            >
+              <CircleFilled className={styles.recordingDot} />
+            </div>
+          )}
           <div className={mergeClasses("stream-grid-overlay", styles.overlay)}>
             <div className="flex min-w-0 items-center gap-2">
+              <span className={styles.cameraIconWrapper}>
+                <Video16Filled
+                  className={mergeClasses(
+                    styles.streamIcon,
+                    styles.onlineStreamIcon,
+                  )}
+                />
+              </span>
               <Text
                 font="monospace"
                 size={100}
@@ -440,6 +541,16 @@ function GridDropCell({
                 {streamName}
               </Text>
               <CircleFilled className={styles.titleStatusIcon} />
+              {isRecording && (
+                <span
+                  className={styles.recordingIndicator}
+                  title="Recording"
+                  aria-label="Recording"
+                >
+                  <CircleFilled className={styles.recordingDot} />
+                  <span className={styles.recordingText}>REC</span>
+                </span>
+              )}
             </div>
             <CloseButton
               size="medium"
@@ -483,6 +594,10 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
     () => new Set(),
   );
   const streamTree = useMemo(() => buildStreamTree(streams), [streams]);
+  const streamByName = useMemo(
+    () => new Map(streams.map((stream) => [stream.name, stream])),
+    [streams],
+  );
 
   const gridDetails = GRID_DETAILS[gridLayout];
   const slotCount = gridDetails.slotCount;
@@ -572,6 +687,12 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
         >
           {Array.from({ length: slotCount }, (_, index) => {
             const streamName = activeGridStreams.get(index) ?? null;
+            const stream = streamName
+              ? (streamByName.get(streamName) ?? null)
+              : null;
+            const isRecording = stream
+              ? isStreamRecordingEnabled(stream)
+              : false;
 
             return (
               <GridDropCell
@@ -579,6 +700,7 @@ export default function MultiPlayerGrid({ streams }: MultiPlayerGridProps) {
                 index={index}
                 gridLayout={gridLayout}
                 streamName={streamName}
+                isRecording={isRecording}
                 setGridStream={setGridStream}
                 clearGridStream={clearGridStream}
               />
