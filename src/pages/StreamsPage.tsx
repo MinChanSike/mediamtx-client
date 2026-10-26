@@ -129,8 +129,8 @@ export default function StreamsPage() {
     : false;
   const deleteWillRemoveConfig = !!latestDeleteStream?.isConfigured;
   const deleteWillRemoveOrphanRuntimePath = !!latestDeleteStream && !deleteWillRemoveConfig && !deleteWillKickSource;
-  const willStartRecording = latestRecordingStream
-    ? !isStreamRecordingEnabled(latestRecordingStream)
+  const willStartRecording = recordingStream
+    ? !isStreamRecordingEnabled(recordingStream)
     : false;
   const recordingActionLabel = willStartRecording
     ? "Start Recording"
@@ -249,7 +249,7 @@ export default function StreamsPage() {
     recordingMutation.mutate(
       {
         pathName: latestRecordingStream.name,
-        record: !isStreamRecordingEnabled(latestRecordingStream),
+        record: willStartRecording,
         isConfigured: latestRecordingStream.isConfigured,
         sourceUri: latestRecordingStream.source,
       },
@@ -406,39 +406,37 @@ export default function StreamsPage() {
         </DialogSurface>
       </Dialog>
 
-      <Dialog
-        open={!!latestRecordingStream}
-        onOpenChange={(_, data) => {
-          if (!data.open) setRecordingStream(null);
-        }}
-      >
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>{recordingActionLabel}</DialogTitle>
-            <DialogContent>
-              {latestRecordingStream && (
+      {latestRecordingStream && (
+        <Dialog
+          open={!!latestRecordingStream}
+          onOpenChange={(_, data) => {
+            if (!data.open) setRecordingStream(null);
+          }}
+        >
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>{recordingActionLabel}</DialogTitle>
+              <DialogContent>
                 <Text>
                   {willStartRecording
                     ? `Start recording stream "${latestRecordingStream.name}"?`
                     : `Stop recording stream "${latestRecordingStream.name}"?`}
                 </Text>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setRecordingStream(null)}>Cancel</Button>
-              <Button
-                appearance="primary"
-                disabled={recordingMutation.isPending}
-                onClick={handleConfirmToggleRecording}
-              >
-                {recordingMutation.isPending
-                  ? "Saving..."
-                  : recordingActionLabel}
-              </Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setRecordingStream(null)}>Cancel</Button>
+                <Button
+                  appearance="primary"
+                  disabled={recordingMutation.isPending}
+                  onClick={handleConfirmToggleRecording}
+                >
+                  {recordingActionLabel}
+                </Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -198,6 +198,7 @@ The repository includes Bun tests covering:
 - Stream details drawer with source details, track configurations, active readers, and generated playback URLs.
 - Active readers and viewer details drawers for connected clients.
 - Multi-player live grid with 1x1, 2x2, 3x3, and 4x4 layouts plus drag-and-drop stream assignment.
+- Move a live player to another grid slot using drag and drop button.
 
 ### Live Stream Playback
 
