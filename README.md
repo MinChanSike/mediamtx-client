@@ -2,7 +2,7 @@
 
 MediaMTX Client is a browser-based management console for a [MediaMTX](https://mediamtx.org/) live media server and media proxy. It provides server health monitoring, live metrics inspection, configuration review, stream management, live video playback, recorded file review, and synchronized playback across multiple cameras.
 
-There is no need to install any software to use it. The application is accessible directly on GitHub Pages at https://mediamtx-client.github.io/ or by opening `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached. Everything runs entirely in the browser and communicates directly with the MediaMTX server. If your browser can access the MediaMTX API, the client can access it too.
+There is no need to install any software to use it. The application is accessible directly on GitHub Pages at https://mediamtx-client.github.io/ or by opening `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached. Everything runs entirely in the browser and communicates directly with the MediaMTX server. If your browser can access the MediaMTX API, the client can access it too. For remote access, use the MediaMTX server's reachable hostname or IP address and allow the client's origin in the MediaMTX CORS settings. Use an HTTPS reverse proxy when serving the client over HTTPS or outside a trusted local network, an HTTPS page also requires HTTPS API and playback endpoints.
 
 This project also demonstrates a practical AI-assisted development process. Almost all the code was produced by AI agents, followed by manual code review. The work used AI-agent workflows, prompt engineering, media domain knowledge, and development tools to guide the agents, check output, improve implementation decisions, and turn media operations requirements into a functional interface.
 
@@ -86,6 +86,22 @@ Start a MediaMTX server with the API enabled. The default endpoints used by the 
 - Playback Server: `http://localhost:9996`
 
 Both endpoints can be adjusted at any time by clicking the settings gear icon in the sidebar. Because the browser communicates directly with MediaMTX, the server endpoints must be accessible from the browser. If cross-origin requests are blocked, ensure the MediaMTX configuration allows API access.
+
+### Docker
+
+Docker must be running with Linux containers. No local Bun installation is required. From the repository root, build and run:
+
+```bash
+docker build -t mediamtx-client .
+docker run -d --name mediamtx-client -p 8080:8080 --read-only --cap-drop=ALL --security-opt=no-new-privileges mediamtx-client
+```
+
+Open [http://localhost:8080](http://localhost:8080). Stop and remove the container when finished:
+
+```bash
+docker stop mediamtx-client
+docker rm mediamtx-client
+```
 
 ### Local Development
 
@@ -227,7 +243,7 @@ Authentication is not implemented yet. It is planned for a future release.
 
 ### TODO
 
-- [ ] Add Docker support for running the client.
+- [x] Add Docker support for running the client.
 - [ ] Added Docker Compose support for running the MediaMTX server with the client.
 - [ ] Provide a prebuilt executable or packaged desktop app.
 - [ ] Add authentication support for secured MediaMTX API endpoints.
