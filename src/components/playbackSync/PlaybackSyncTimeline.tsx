@@ -31,92 +31,91 @@ interface PlaybackTimelineProps {
 
 const useStyles = makeStyles({
   root: {
-    boxSizing: "border-box",
-    display: "flex",
-    height: "108px",
-    minHeight: "108px",
+    boxSizing: 'border-box',
+    display: 'flex',
+    height: '108px',
+    minHeight: '108px',
     flexShrink: 0,
-    flexDirection: "column",
+    flexDirection: 'column',
     borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderLeft: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    userSelect: "none",
-    WebkitUserSelect: "none",
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   track: {
-    position: "relative",
-    display: "flex",
+    position: 'relative',
+    display: 'flex',
     minHeight: 0,
     flex: 1,
-    flexDirection: "column",
+    flexDirection: 'column',
     gap: tokens.spacingVerticalXXS,
   },
   ruler: {
-    position: "relative",
-    height: "22px",
+    position: 'relative',
+    height: '22px',
     flexShrink: 0,
-    overflow: "hidden",
   },
   rulerLabel: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     fontSize: tokens.fontSizeBase100,
     lineHeight: tokens.lineHeightBase100,
     color: tokens.colorNeutralForeground3,
     fontFamily: tokens.fontFamilyMonospace,
-    whiteSpace: "nowrap",
-    userSelect: "none",
-    pointerEvents: "none",
-    "@media (max-width: 900px)": {
-      ":nth-child(even)": {
-        display: "none",
+    whiteSpace: 'nowrap',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    '@media (max-width: 900px)': {
+      ':nth-child(even)': {
+        display: 'none',
       },
     },
   },
   rulerBaseline: {
-    position: "absolute",
-    top: "21px",
+    position: 'absolute',
+    top: '21px',
     left: 0,
     right: 0,
-    height: "1px",
-    backgroundColor: tokens.colorNeutralForeground1,
+    height: '1px',
+    backgroundColor: tokens.colorNeutralStroke1,
   },
   rulerTickTall: {
-    position: "absolute",
-    top: "13px",
-    width: "2px",
-    height: "8px",
-    marginLeft: "-1px",
+    position: 'absolute',
+    top: '13px',
+    width: '1px',
+    height: '8px',
+    marginLeft: '-0.5px',
     backgroundColor: tokens.colorNeutralForeground1,
   },
   rulerTickMedium: {
-    position: "absolute",
-    top: "15px",
-    width: "1px",
-    height: "6px",
-    marginLeft: "-0.5px",
-    backgroundColor: tokens.colorNeutralForeground1,
+    position: 'absolute',
+    top: '15px',
+    width: '1px',
+    height: '6px',
+    marginLeft: '-0.5px',
+    backgroundColor: tokens.colorNeutralForeground2,
   },
   rulerTickSmall: {
-    position: "absolute",
-    top: "18px",
-    width: "1px",
-    height: "3px",
-    marginLeft: "-0.5px",
+    position: 'absolute',
+    top: '18px',
+    width: '1px',
+    height: '3px',
+    marginLeft: '-0.5px',
     backgroundColor: tokens.colorNeutralForeground3,
   },
   lanes: {
-    position: "relative",
-    display: "flex",
-    flexDirection: "column",
-    gap: "3px",
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
   },
   lane: {
-    position: "relative",
-    height: "14px",
-    overflow: "hidden",
+    position: 'relative',
+    height: '14px',
+    overflow: 'hidden',
     borderRadius: tokens.borderRadiusSmall,
     backgroundColor: tokens.colorNeutralBackground3,
   },
@@ -332,17 +331,17 @@ export default function PlaybackSyncTimeline({
       >
         <div className={styles.ruler} aria-hidden="true">
           {HOUR_MARKS.map((mark) => {
-            let transform = "translateX(-50%)";
-            if (mark.hour === 0) transform = "translateX(0)";
-            else if (mark.hour === 24) transform = "translateX(-100%)";
+            const isStart = mark.hour === 0;
+            const isEnd = mark.hour === 24;
 
             return (
               <span
                 key={mark.hour}
                 className={styles.rulerLabel}
                 style={{
-                  left: `${mark.percent}%`,
-                  transform,
+                  left: isEnd ? undefined : `${mark.percent}%`,
+                  right: isEnd ? 0 : undefined,
+                  transform: isStart || isEnd ? undefined : 'translateX(-50%)',
                 }}
               >
                 {mark.label}
@@ -350,20 +349,29 @@ export default function PlaybackSyncTimeline({
             );
           })}
           <div className={styles.rulerBaseline} />
-          {RULER_TICKS.map((tick) => (
-            <div
-              key={tick.index}
-              className={
-                tick.type === "tall"
-                  ? styles.rulerTickTall
-                  : tick.type === "medium"
-                    ? styles.rulerTickMedium
-                    : styles.rulerTickSmall
-              }
-              style={{ left: `${tick.percent}%` }}
-              title={tick.timeLabel}
-            />
-          ))}
+          {RULER_TICKS.map((tick) => {
+            const isStart = tick.index === 0;
+            const isEnd = tick.index === RULER_DIVISIONS;
+
+            return (
+              <div
+                key={tick.index}
+                className={
+                  tick.type === 'tall'
+                    ? styles.rulerTickTall
+                    : tick.type === 'medium'
+                      ? styles.rulerTickMedium
+                      : styles.rulerTickSmall
+                }
+                style={{
+                  left: isEnd ? undefined : `${tick.percent}%`,
+                  right: isEnd ? 0 : undefined,
+                  marginLeft: isStart || isEnd ? 0 : undefined,
+                }}
+                title={tick.timeLabel}
+              />
+            );
+          })}
         </div>
 
         <div className={styles.lanes}>
