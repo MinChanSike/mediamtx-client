@@ -11,6 +11,8 @@ export interface PlayerState {
   streamsView: StreamsView;
   gridLayout: GridLayout;
   activeGridStreams: Map<number, string>;
+  gridPlayerIds: Map<number, number>;
+  moveGridStream: (fromSlot: number, toSlot: number, playerId: number) => void;
   setDrawerStream: (stream: PathItem | null) => void;
   setIsDrawerOpen: (open: boolean) => void;
   setStreamsView: (view: StreamsView) => void;
@@ -78,10 +80,13 @@ function restoreGridStreams(value: unknown): Map<number, string> {
   return new Map(validEntries);
 }
 
+let nextGridPlayerId = 0;
+
 function mergePlayerPreferences(persistedState: unknown, currentState: PlayerState): PlayerState {
   if (!persistedState || typeof persistedState !== 'object') return currentState;
 
   const persisted = persistedState as Partial<PlayerPreferences>;
+  const activeGridStreams = restoreGridStreams(persisted.activeGridStreams);
   return {
     ...currentState,
     streamsView: isStreamsView(persisted.streamsView)
@@ -90,7 +95,10 @@ function mergePlayerPreferences(persistedState: unknown, currentState: PlayerSta
     gridLayout: isGridLayout(persisted.gridLayout)
       ? persisted.gridLayout
       : currentState.gridLayout,
-    activeGridStreams: restoreGridStreams(persisted.activeGridStreams),
+    activeGridStreams,
+    gridPlayerIds: new Map(
+      Array.from(activeGridStreams.keys(), (slot) => [slot, nextGridPlayerId++])
+    ),
   };
 }
 
@@ -103,6 +111,7 @@ export function createPlayerStore(storage: StateStorage = safeLocalStorage) {
         streamsView: 'table',
         gridLayout: '2x2',
         activeGridStreams: new Map(),
+        gridPlayerIds: new Map(),
         setDrawerStream: (stream) => set({ drawerStream: stream }),
         setIsDrawerOpen: (open) => set({ isDrawerOpen: open }),
         setStreamsView: (view) => set({ streamsView: view }),
@@ -111,13 +120,47 @@ export function createPlayerStore(storage: StateStorage = safeLocalStorage) {
           set((state) => {
             const next = new Map(state.activeGridStreams);
             next.set(slot, streamName);
-            return { activeGridStreams: next };
+            const ids = new Map(state.gridPlayerIds);
+            if (state.activeGridStreams.get(slot) !== streamName || !ids.has(slot)) {
+              ids.set(slot, nextGridPlayerId++);
+            }
+            return { activeGridStreams: next, gridPlayerIds: ids };
           }),
         clearGridStream: (slot) =>
           set((state) => {
             const next = new Map(state.activeGridStreams);
             next.delete(slot);
-            return { activeGridStreams: next };
+            const ids = new Map(state.gridPlayerIds);
+            ids.delete(slot);
+            return { activeGridStreams: next, gridPlayerIds: ids };
+          }),
+        moveGridStream: (fromSlot, toSlot, playerId) =>
+          set((state) => {
+            const columns = Number(state.gridLayout[0]);
+            const slotCount = columns * columns;
+            const streamName = state.activeGridStreams.get(fromSlot);
+            if (
+              !Number.isInteger(fromSlot) || !Number.isInteger(toSlot) ||
+              fromSlot < 0 || toSlot < 0 || fromSlot >= slotCount || toSlot >= slotCount ||
+              fromSlot === toSlot || streamName === undefined ||
+              state.gridPlayerIds.get(fromSlot) !== playerId
+            ) return state;
+
+            const next = new Map(state.activeGridStreams);
+            const ids = new Map(state.gridPlayerIds);
+            const displacedStream = next.get(toSlot);
+            const displacedId = ids.get(toSlot);
+            next.delete(fromSlot);
+            ids.delete(fromSlot);
+            if (displacedStream !== undefined) {
+              const emptySlot = Array.from({ length: slotCount }, (_, slot) => slot)
+                .find((slot) => !state.activeGridStreams.has(slot)) ?? fromSlot;
+              next.set(emptySlot, displacedStream);
+              ids.set(emptySlot, displacedId ?? nextGridPlayerId++);
+            }
+            next.set(toSlot, streamName);
+            ids.set(toSlot, playerId);
+            return { activeGridStreams: next, gridPlayerIds: ids };
           }),
       }),
       {

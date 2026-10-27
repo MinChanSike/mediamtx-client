@@ -22,6 +22,22 @@ export function isStreamAssignmentDragData(
   );
 }
 
+export interface GridPlayerDragData extends Record<string, unknown> {
+  type: 'grid-player';
+  fromSlot: number;
+  playerId: number;
+}
+
+export function createGridPlayerDragData(fromSlot: number, playerId: number): GridPlayerDragData {
+  return { type: 'grid-player', fromSlot, playerId };
+}
+
+export function isGridPlayerDragData(data: Record<string, unknown>): data is GridPlayerDragData {
+  return data.type === 'grid-player' &&
+    Number.isInteger(data.fromSlot) && (data.fromSlot as number) >= 0 &&
+    Number.isInteger(data.playerId) && (data.playerId as number) >= 0;
+}
+
 export function assignDroppedStream(
   data: Record<string, unknown>,
   slot: number,

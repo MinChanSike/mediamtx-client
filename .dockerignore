@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!package.json
+!bun.lock
+!index.html
+!vite.config.ts
+!tsconfig*.json
+!postcss.config.js
+!tailwind.config.ts
+!src/
+!src/**
+!public/
+!public/**

@@ -7,6 +7,7 @@ import {
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
+import { CircleFilled, Video16Filled } from '@fluentui/react-icons';
 import CloseButton from '@src/components/common/CloseButton';
 import usePlayerStore from '@src/store/usePlayerStore';
 import VideoPlayer from '@src/components/streams/VideoPlayer';
@@ -16,6 +17,7 @@ import { getDisplayProtocol } from '@src/utils/streamDisplay';
 import { usePathTransferRate } from '@src/hooks/useTransferRates';
 import { formatByteRate } from '@src/utils/formatters';
 import { UNAVAILABLE_RATE, type TransferRate } from '@src/utils/transferRates';
+import { isStreamRecordingEnabled } from '@src/utils/recordingStatus';
 
 const useStyles = makeStyles({
   body: {
@@ -43,6 +45,73 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     textTransform: 'uppercase',
   },
+  titleWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+  },
+  cameraIcon: {
+    width: '16px',
+    height: '16px',
+    flexShrink: 0,
+    color: tokens.colorNeutralForeground3,
+  },
+  onlineCameraIcon: {
+    color: tokens.colorPaletteLightGreenForeground3,
+  },
+  cameraIconWrapper: {
+    position: 'relative',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '16px',
+    height: '16px',
+    flexShrink: 0,
+  },
+  cameraRecordingDot: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    fontSize: '6px',
+    width: '6px',
+    height: '6px',
+    color: '#d13438',
+    animationName: {
+      from: { opacity: 1 },
+      '50%': { opacity: 0.25 },
+      to: { opacity: 1 },
+    },
+    animationDuration: '1.2s',
+    animationIterationCount: 'infinite',
+    animationTimingFunction: 'ease-in-out',
+    pointerEvents: 'none',
+  },
+  recordingIndicator: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+  },
+  recordingDot: {
+    width: '8px',
+    height: '8px',
+    flexShrink: 0,
+    color: '#d13438',
+    animationName: {
+      from: { opacity: 1 },
+      '50%': { opacity: 0.25 },
+      to: { opacity: 1 },
+    },
+    animationDuration: '1.2s',
+    animationIterationCount: 'infinite',
+    animationTimingFunction: 'ease-in-out',
+  },
+  recordingText: {
+    color: '#d13438',
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    lineHeight: tokens.lineHeightBase100,
+  },
 });
 
 export function getSinglePlayerMetrics(stream: PathItem, rate: TransferRate = UNAVAILABLE_RATE) {
@@ -64,6 +133,7 @@ export default function SinglePlayerDrawer() {
   const rate = usePathTransferRate(drawerStream?.name);
   const isDrawerOpen = usePlayerStore((s) => s.isDrawerOpen);
   const setIsDrawerOpen = usePlayerStore((s) => s.setIsDrawerOpen);
+  const isRecording = drawerStream ? isStreamRecordingEnabled(drawerStream) : false;
 
   const handleClose = () => {
     setIsDrawerOpen(false);
@@ -87,7 +157,28 @@ export default function SinglePlayerDrawer() {
             />
           }
         >
-          <Text weight="semibold">Stream: {drawerStream?.name ?? 'Stream'}</Text>
+          <div className={styles.titleWrapper}>
+            <span className={styles.cameraIconWrapper}>
+              <Video16Filled className={styles.onlineCameraIcon} />
+              {isRecording && (
+                <CircleFilled
+                  className={styles.cameraRecordingDot}
+                  aria-hidden="true"
+                />
+              )}
+            </span>
+            <Text weight="semibold">Stream: {drawerStream?.name ?? 'Stream'}</Text>
+            {isRecording && (
+              <span
+                className={styles.recordingIndicator}
+                title="Recording"
+                aria-label="Recording"
+              >
+                <CircleFilled className={styles.recordingDot} />
+                <span className={styles.recordingText}>REC</span>
+              </span>
+            )}
+          </div>
         </DrawerHeaderTitle>
       </DrawerHeader>
 

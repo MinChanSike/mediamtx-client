@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { useStreamPlayer } from '../src/hooks/useStreamPlayer';
+import MultiPlayerGrid from '../src/components/streams/MultiPlayerGrid';
+import VideoPlayer from '../src/components/streams/VideoPlayer';
+import usePlayerStore from '../src/store/usePlayerStore';
 import useAppStore from '../src/store/useAppStore';
 import useMediaMTXApiStore from '../src/store/useMediaMTXApiStore';
 import type { GlobalConfig } from '../src/types/config';
@@ -197,6 +200,69 @@ afterEach(async () => {
 });
 
 describe('useStreamPlayer refresh stability', () => {
+  test('grid moves preserve player instances, connections, volume, and duplicate camera views', async () => {
+    const previous = usePlayerStore.getState();
+    usePlayerStore.setState({ activeGridStreams: new Map(), gridPlayerIds: new Map(), gridLayout: '2x2' });
+    const store = usePlayerStore.getState();
+    store.setGridStream(0, 'camera-1');
+    store.setGridStream(1, 'camera-1');
+    const firstId = usePlayerStore.getState().gridPlayerIds.get(0)!;
+    const secondId = usePlayerStore.getState().gridPlayerIds.get(1)!;
+    const videos: ReturnType<typeof createVideoNodeMock>[] = [];
+    try {
+      await act(async () => {
+        renderer = create(createElement(MultiPlayerGrid, { streams: [] }), {
+          createNodeMock: (element) => {
+            if (element.type !== 'video') return null;
+            const video = createVideoNodeMock(element);
+            videos.push(video);
+            return video;
+          },
+        });
+      });
+      await flushAsyncWork();
+      const players = renderer!.root.findAllByType(VideoPlayer);
+      await act(async () => {
+        players[0].find((node) => node.type === 'div' && !!node.props.onMouseMove).props.onMouseMove();
+      });
+      const volume = renderer!.root.findAllByProps({ 'aria-label': 'Volume' })[0];
+      await act(async () => { volume.props.onChange({ target: { value: '0.7' } }); });
+      expect(connectionStarts).toBe(2);
+      expect(connectionCloses).toBe(0);
+      expect(videos).toHaveLength(2);
+
+      // Empty move, occupied displacement, then full-grid swap.
+      await act(async () => { store.moveGridStream(0, 3, firstId); });
+      await act(async () => { store.moveGridStream(3, 1, firstId); });
+      expect(usePlayerStore.getState().gridPlayerIds.get(0)).toBe(secondId);
+      await act(async () => {
+        store.setGridStream(2, 'camera-2');
+        store.setGridStream(3, 'camera-3');
+      });
+      await flushAsyncWork();
+      await act(async () => { store.moveGridStream(1, 0, firstId); });
+      await flushAsyncWork();
+      const movedPlayers = renderer!.root.findAllByType(VideoPlayer);
+      expect(movedPlayers[0]).toBe(players[0]);
+      expect(movedPlayers[1]).toBe(players[1]);
+      expect(connectionStarts).toBe(4);
+      expect(connectionCloses).toBe(0);
+      expect(videos).toHaveLength(4);
+      expect(renderer!.root.findAllByProps({ 'aria-label': 'Volume' })[0].props.value).toBe(0.7);
+      expect(videos[0].volume).toBe(0.7);
+      expect(videos[0].muted).toBe(false);
+      const firstCell = renderer!.root.findByProps({ 'aria-label': 'Grid slot 1, camera-1' });
+      expect(firstCell.props.style).toEqual({ gridColumn: 1, gridRow: 1 });
+      await act(async () => { firstCell.findByProps({ 'aria-label': 'Close' }).props.onClick(); });
+      expect(usePlayerStore.getState().activeGridStreams.has(0)).toBe(false);
+      expect(usePlayerStore.getState().gridPlayerIds.get(1)).toBe(secondId);
+      expect(connectionCloses).toBe(1);
+    } finally {
+      await act(async () => { renderer?.unmount(); renderer = undefined; });
+      usePlayerStore.setState(previous);
+    }
+  });
+
   test('keeps playback connected across same-stream parent rerenders and unchanged config refreshes', async () => {
     await renderPlayer('camera-1');
 

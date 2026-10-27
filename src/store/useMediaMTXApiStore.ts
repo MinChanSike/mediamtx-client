@@ -36,6 +36,8 @@ interface MediaMTXApiState {
   transferRates: Record<string, TransferRate>;
   transferSamples: Record<string, TransferSample>;
   ratesStatus: 'unavailable' | 'fresh' | 'stale';
+  metricsRefreshEpoch: number;
+  resetMetricsTimer: () => void;
   expireRates: () => void;
   serverUrl: string;
   paths: ApiResourceState<PathList>;
@@ -142,6 +144,9 @@ const useMediaMTXApiStore = create<MediaMTXApiState>((set, get) => ({
   transferRates: {},
   transferSamples: {},
   ratesStatus: 'unavailable',
+  metricsRefreshEpoch: 0,
+  resetMetricsTimer: () =>
+    set((state) => ({ metricsRefreshEpoch: state.metricsRefreshEpoch + 1 })),
   expireRates: () => {
     clearTimeout(rateExpiryTimer);
     set({ transferRates: {}, transferSamples: {}, ratesStatus: 'stale' });

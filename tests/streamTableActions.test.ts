@@ -81,7 +81,7 @@ describe('Stream table actions source contract', () => {
     expect(page).toContain('setRecordingStream(stream);');
     expect(page).toContain('function handleConfirmToggleRecording()');
     expect(page).toContain('recordingMutation.mutate(');
-    expect(page).toContain('record: !isStreamRecordingEnabled(latestRecordingStream)');
+    expect(page).toContain('record: willStartRecording,');
     expect(page).toContain('isConfigured: latestRecordingStream.isConfigured');
     expect(page).toContain('sourceUri: latestRecordingStream.source');
     expect(page).toContain('onSettled: () => setRecordingStream(null)');
@@ -93,6 +93,23 @@ describe('Stream table actions source contract', () => {
     expect(page.slice(dialogStart, dialogEnd)).toContain('Start recording stream');
     expect(page.slice(dialogStart, dialogEnd)).toContain('Stop recording stream');
     expect(page.slice(dialogStart, dialogEnd)).toContain('handleConfirmToggleRecording');
+  });
+
+  test('keeps recording confirmation action stable through refresh and pending updates', () => {
+    const page = source('src/pages/StreamsPage.tsx');
+    const actionStart = page.indexOf('const willStartRecording =');
+    const actionEnd = page.indexOf('const recordingActionLabel', actionStart);
+    const dialogStart = page.indexOf('open={!!latestRecordingStream}');
+    const dialogEnd = page.indexOf('</Dialog>', dialogStart);
+    const dialog = page.slice(dialogStart, dialogEnd);
+
+    expect(page.slice(actionStart, actionEnd)).toContain('!isStreamRecordingEnabled(recordingStream)');
+    expect(page.slice(actionStart, actionEnd)).not.toContain('latestRecordingStream');
+    expect(page).toContain('{latestRecordingStream && (\n        <Dialog');
+    expect(dialog).toContain('disabled={recordingMutation.isPending}');
+    expect(dialog).toContain('onClick={handleConfirmToggleRecording}');
+    expect(dialog).not.toContain('Saving...');
+    expect(page).toContain('record: willStartRecording,');
   });
 
   test('widens stream names while keeping non-name and non-actions columns equal width', () => {

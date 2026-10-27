@@ -43,6 +43,7 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacingVerticalXS,
+    marginTop: tokens.spacingVerticalM,
   },
   configHeader: {
     display: "flex",

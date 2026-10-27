@@ -402,6 +402,10 @@ export default function StreamTable({
                     className={mergeClasses(styles.dataCell, styles.nameCell)}
                   >
                     <StreamNameCell name={stream.name} />
+                    <RecordingStatusBadge
+                      isRecording={isRecording}
+                      className="ml-2 mt-1"
+                    />
                   </TableCell>
                   <TableCell
                     className={mergeClasses(
@@ -471,7 +475,6 @@ export default function StreamTable({
                   >
                     <div className={styles.statusBadges}>
                       <StatusBadge status={isOnline ? "online" : "offline"} />
-                      <RecordingStatusBadge isRecording={isRecording} />
                     </div>
                   </TableCell>
                   <TableCell
