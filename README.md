@@ -1,102 +1,178 @@
 # MediaMTX Client
 
-MediaMTX Client is a browser-based management console for a [MediaMTX](https://mediamtx.org/) live media server and media proxy. It provides server health monitoring, live metrics inspection, configuration review, stream management, live video playback, recorded file review, and synchronized playback across multiple cameras.
+[![Live Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-blue)](https://mediamtx-client.github.io/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
 
-There is no need to install any software to use it. The application is accessible directly on GitHub Pages at https://mediamtx-client.github.io/ or by opening `dist/index.html` locally in any web browser. No metadata is collected, and there are no strings attached. Everything runs entirely in the browser and communicates directly with the MediaMTX server. If your browser can access the MediaMTX API, the client can access it too. For remote access, use the MediaMTX server's reachable hostname or IP address and allow the client's origin in the MediaMTX CORS settings. Use an HTTPS reverse proxy when serving the client over HTTPS or outside a trusted local network, an HTTPS page also requires HTTPS API and playback endpoints.
+A modern, browser-based management console for the [MediaMTX](https://mediamtx.org/) live media server and proxy. Monitor server health, inspect real-time metrics, configure streams, watch live feeds, and review recorded footage with synchronized multi-camera playback.
 
-This project also demonstrates a practical AI-assisted development process. Almost all the code was produced by AI agents, followed by manual code review. The work used AI-agent workflows, prompt engineering, media domain knowledge, and development tools to guide the agents, check output, improve implementation decisions, and turn media operations requirements into a functional interface.
+## Table of Contents
+
+- [Overview](#overview)
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Docker](#docker)
+  - [Local Development](#local-development)
+  - [Quality Checks](#quality-checks)
+- [Testing](#testing)
+- [Transfer Rate Metrics](#transfer-rate-metrics)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+
+## Overview
+
+MediaMTX Client runs 100% in the browser and connects directly to your MediaMTX server. No backend service, local database, or installation is required.
+
+- **Zero Install:** Use the live app directly at [mediamtx-client.github.io](https://mediamtx-client.github.io/) or open the compiled `dist/index.html` file in any modern web browser.
+- **Privacy & Security:** No analytics, tracking, or remote telemetry. All requests stay between your browser and your MediaMTX instance.
+- **Portable Distribution:** Packaged with a single standalone HTML bundle that can be hosted anywhere or run offline.
+- **Docker Ready:** Run via Docker in a secure, read-only container without installing local runtimes.
+- **Network Requirements:** Ensure your browser can reach the MediaMTX API and playback endpoints. When serving the client over HTTPS, MediaMTX API endpoints must also use HTTPS to avoid browser mixed-content restrictions. If accessing across domains, enable CORS in `mediamtx.yml`.
 
 ## Screenshots
 
-![Server dashboard with API status, protocol listeners, metrics, and configuration summary](screenshots/dashboard.png)
+<table border="1">
+  <tr>
+    <td width="50%"><a href="screenshots/dashboard.png"><img src="screenshots/dashboard.png" width="100%" alt="Dashboard" /></a></td>
+    <td width="50%"><a href="screenshots/dashboard-light.png"><img src="screenshots/dashboard-light.png" width="100%" alt="Dashboard Light" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="screenshots/streams-table.png"><img src="screenshots/streams-table.png" width="100%" alt="Streams Table" /></a></td>
+    <td width="50%"><a href="screenshots/streams-grid.png"><img src="screenshots/streams-grid.png" width="100%" alt="Multi-Player Grid" /></a></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="screenshots/playback.png"><img src="screenshots/playback.png" width="100%" alt="Single Steam Playback" /></a></td>
+    <td width="50%"><a href="screenshots/playback-sync.png"><img src="screenshots/playback-sync.png" width="100%" alt="Synchronized Playback" /></a></td>
+  </tr>
+</table>
 
-![Streams table with search, protocol filter, status, recording badges, metrics, and row actions](screenshots/streams-table.png)
+## Features
 
-![Multi-player grid view with stream tree, layout controls, and stream assignment](screenshots/streams-grid.png)
+### Dashboard & Server Health
 
-![Recorded file playback with stream selection, file list, playback controls, and download options](screenshots/playback.png)
+- **Live Server Metrics:** Uptime, total streams, recording streams, reader counts, and aggregate transfer rates.
+- **Protocol Listeners:** Active listener addresses for WebRTC, RTSP, RTMP, HLS, and SRT.
+- **Configuration Inspector:** Grouped settings overview with an on-demand raw JSON viewer.
+- **Connection Status:** Real-time health indicators and customizable API endpoint settings.
 
-![Synchronized multi-stream playback with multi-slot grid, shared timeline, and recording catalog](screenshots/playback-sync.png)
+### Stream Management
+
+- **Search & Filter:** Find streams quickly by name, state, or protocol.
+- **Stream Inventory:** Sortable table displaying tracks, readers, ingress/egress rates, and recording status.
+- **Lifecycle Actions:** Add new paths with source URI validation, edit configurations, delete paths, or kick active sources.
+- **Details Drawer:** Inspect media tracks, active reader sessions, and generated playback URLs.
+
+### Live Playback & Multi-Camera Grid
+
+- **Low-Latency Streaming:** WebRTC (WHEP) first with automatic fallback to HLS (`hls.js`).
+- **Protocol URLs:** Ready-to-copy playback links for WebRTC, HLS, RTSP, RTMP, and SRT.
+- **Multi-Player Grid:** Flexible 1×1, 2×2, 3×3, and 4×4 video wall.
+- **Drag-and-Drop Assignment:** Easily drag streams into player slots or rearrange active players.
+
+### Recording & Playback Review
+
+- **Recording Controls:** Toggle recording on active streams with confirmation prompts.
+- **File Browser:** Browse recorded MP4 segments with timestamps, durations, and file sizes.
+- **Segment Viewer:** Seek bar, variable playback speed (0.5×–2×), autoplay next segment, and direct MP4 downloads.
+
+### Synchronized Multi-Stream Playback
+
+- **Multi-Slot Review:** Compare up to 4 recorded camera feeds simultaneously.
+- **Date Navigation:** Calendar-based day selector for recorded footage.
+- **Shared Timeline:** Interactive multi-track timeline showing recording intervals for all active feeds.
+- **Lockstep Scrubbing:** Unified play/pause and time synchronization across all camera feeds.
 
 ## Architecture
 
-The application is a browser-only Vite, React, and TypeScript client. It communicates directly with configured MediaMTX API and playback server endpoints. There is no backend service, and no user metadata or telemetry is collected.
+MediaMTX Client is a pure single-page application requiring no backend service other than MediaMTX.
 
-Application state is split across small Zustand stores. These stores manage app preferences, dashboard metrics, player assignments, recorded file playback, timeline synchronization, and MediaMTX API resources. API hooks fetch server info, paths, global config, raw config, path details, viewer lists, and recording segments. Live paths and server info refresh every 3000 ms while visible, and refresh automatically when returning to the browser tab. Global configuration loads on entry, explicit refresh, and relevant updates. Path configuration metadata is fetched alongside runtime paths.
+- **Direct API Communication:** Direct REST and playback requests to MediaMTX endpoints (`:9997` API, `:9996` Playback by default).
+- **State Management:** Zustand manages application state, user preferences, live player assignments, and timeline clocks.
+- **Automatic Polling:** Visible paths and server status refresh every 3 seconds and automatically pause when the browser tab is hidden.
+- **Single-File Artifact:** The production build compiles all scripts, styles, and assets into one standalone `index.html`.
 
-The user interface provides four main views: Dashboard, Streams, Playback, and Playback Sync. The production build uses `vite-plugin-singlefile`, bundling the entire application into one portable `index.html` file that runs from anywhere without a local web server.
+## Tech Stack
 
-## Technology Stack
-
-- React 18 and TypeScript
-- Vite 6
-- Bun for dependency install, scripts, and tests
-- Microsoft Fluent UI React components and Fluent UI icons
-- Zustand for UI preferences, API resource state, dashboard metrics, and player state
-- HTML5 video and `hls.js` for browser playback with WebRTC and HLS fallback
-- Zod for stream and MediaMTX API response validation
-- Atlaskit pragmatic drag-and-drop for live grid and playback sync slot assignment
-- Tailwind CSS and PostCSS for app styling
-- ESLint, Prettier, and TypeScript project references for development checks
-- `vite-plugin-singlefile` for portable single-file builds
+| Category                      | Technology                                 |
+| :---------------------------- | :----------------------------------------- |
+| **Framework**                 | React 18, TypeScript                       |
+| **Build Tool**                | Vite 6, `vite-plugin-singlefile`           |
+| **Runtime & Package Manager** | Bun                                        |
+| **UI Components**             | Microsoft Fluent UI React, Fluent UI Icons |
+| **Styling**                   | Tailwind CSS, PostCSS                      |
+| **State Management**          | Zustand                                    |
+| **Media Playback**            | Native HTML5 Video, WebRTC WHEP, `hls.js`  |
+| **Drag & Drop**               | `@atlaskit/pragmatic-drag-and-drop`        |
+| **Validation**                | Zod                                        |
 
 ## Project Structure
 
 ```text
 .
 |-- dist/
-|   `-- index.html           Portable single-file application
+|   `-- index.html              # Portable single-file application
 |-- docs/
-|   |-- mediamtx-api.http    MediaMTX API request examples
-|   `-- mediamtx-openapi.yaml
-|-- screenshots/             Application screenshots
+|   |-- mediamtx-api.http       # MediaMTX API request examples
+|   `-- mediamtx-openapi.yaml   # OpenAPI specification
+|-- screenshots/                # Application preview images
 |-- src/
-|   |-- api/                 MediaMTX API and playback request helpers
-|   |-- assets/              Icons and image assets
-|   |-- components/
-|   |   |-- common/          Shared UI primitives and buttons
-|   |   |-- config/          Configuration summary and raw JSON views
-|   |   |-- dashboard/       Server status and dashboard metrics
-|   |   |-- layout/          Sidebar, header, and theme controls
-|   |   |-- playback/        Recorded file player, file list, and seek bar
-|   |   |-- playbackSync/    Multi-stream sync grid, controls, and timeline
-|   |   `-- streams/         Stream tables, cards, drawers, players, and grid
-|   |-- hooks/               API, mutation, metrics, and playback hooks
-|   |-- pages/               Dashboard, Streams, Playback, and Playback Sync pages
-|   |-- playbackSync/        Shared clock and multi-stream sync controller
-|   |-- router/              Route definitions and path helpers
-|   |-- schemas/             Zod schemas for config and path data
-|   |-- store/               Zustand stores for state management
-|   |-- styles/              Global CSS and Tailwind layers
-|   |-- types/               Shared TypeScript types
-|   `-- utils/               Formatting, protocol, status, and time helpers
-|-- tests/                   Bun unit and component-behavior tests
+|   |-- api/                    # MediaMTX API and playback helpers
+|   |-- assets/                 # Icons and image assets
+|   |-- components/             # Reusable UI components
+|   |   |-- common/             # Shared UI primitives
+|   |   |-- config/             # Configuration summaries and JSON view
+|   |   |-- dashboard/          # Server status and metric widgets
+|   |   |-- layout/             # Header, sidebar, and shell layout
+|   |   |-- playback/           # Recorded file player components
+|   |   `-- streams/            # Stream table, cards, drawers, and live grid
+|   |-- hooks/                  # API data fetching and polling hooks
+|   |-- pages/                  # Dashboard, Streams, Playback, and Playback Sync
+|   |-- playbackSync/           # Shared timeline clock controller
+|   |-- router/                 # Route definitions
+|   |-- schemas/                # Zod schemas for API validation
+|   |-- store/                  # Zustand stores
+|   |-- styles/                 # Tailwind CSS styles
+|   |-- types/                  # TypeScript type declarations
+|   `-- utils/                  # Formatting, calculation, and time helpers
+|-- tests/                      # Unit and integration test suites
 |-- package.json
-|-- bun.lock
 `-- vite.config.ts
 ```
 
-## Setup And Run
+## Getting Started
 
-### MediaMTX Server Requirements
+### Prerequisites
 
-Start a MediaMTX server with the API enabled. The default endpoints used by the client are:
+A running [MediaMTX](https://mediamtx.org/) instance with API access enabled:
 
-- Control API: `http://localhost:9997`
-- Playback Server: `http://localhost:9996`
+- **Control API:** `http://localhost:9997` (default)
+- **Playback Server:** `http://localhost:9996` (default)
 
-Both endpoints can be adjusted at any time by clicking the settings gear icon in the sidebar. Because the browser communicates directly with MediaMTX, the server endpoints must be accessible from the browser. If cross-origin requests are blocked, ensure the MediaMTX configuration allows API access.
+_Endpoints can be updated at any time in the client settings drawer._
 
 ### Docker
 
-Docker must be running with Linux containers. No local Bun installation is required. From the repository root, build and run:
+Run the client in a secure, read-only Docker container without installing local toolchains:
 
 ```bash
+# Build the Docker image
 docker build -t mediamtx-client .
+
+# Run the container
 docker run -d --name mediamtx-client -p 8080:8080 --read-only --cap-drop=ALL --security-opt=no-new-privileges mediamtx-client
 ```
 
-Open [http://localhost:8080](http://localhost:8080). Stop and remove the container when finished:
+Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+To stop and remove the container:
 
 ```bash
 docker stop mediamtx-client
@@ -105,154 +181,68 @@ docker rm mediamtx-client
 
 ### Local Development
 
-To build or modify the project from source, install Bun first. This repository includes `bun.lock`, so install dependencies with:
+Local development requires [Bun](https://bun.sh/):
 
 ```bash
-bun install --frozen-lockfile
-```
+# Install dependencies
+bun install
 
-Run the development server:
-
-```bash
+# Start local dev server
 bun run dev
-```
 
-Build the portable single-file application:
-
-```bash
+# Build the portable single-file bundle
 bun run build
-```
 
-Preview the production build:
-
-```bash
+# Preview production build locally
 bun run preview
 ```
 
-Run the quality checks:
+### Quality Checks
+
+Run the verification test suites and linters:
 
 ```bash
-bun run test
-bun run typecheck
-bun run lint
+bun run test        # Run unit and component tests
+bun run typecheck   # Typecheck TypeScript code
+bun run lint        # Lint source files with ESLint
 ```
 
-The main development checks for this repository are:
+## Testing
 
-```bash
-bun run typecheck
-bun run lint
-bun run build
-```
+The project includes test coverage for core workflows and UI components:
 
-## Tests
+- User preference and theme persistence (Light / Dark mode).
+- Server uptime calculations and API connection state handling.
+- Playback URL generation for WebRTC, HLS, RTSP, RTMP, and SRT.
+- Stream actions (add, edit, delete, recording toggle, kick source).
+- Live grid slot management and drag-and-drop interactions.
+- Recorded file formatting and player state management.
+- Multi-camera synchronized playback controller and timeline alignment.
 
-The repository includes Bun tests covering:
+## Transfer Rate Metrics
 
-- User preferences and theme persistence
-- Server uptime calculations and API connection status
-- Runtime dependencies and router base paths
-- Configuration summary rendering and raw configuration toggling
-- Playback URL generation for WebRTC, HLS, RTSP, RTMP, and SRT
-- Stream details drawer actions
-- Single-player drawer behavior and video sizing
-- Stream editing, deletion, and protocol validation
-- Live drag-and-drop grid layouts and player refresh logic
-- Transfer rate calculations and metric formatting
-- Recorded file playback, file formatting, and player store behavior
-- Playback sync grid, timeline lanes, day navigation, and slot assignment
-- Multi-stream shared clock synchronization controller
-- Recording toggle actions, status badges, and table column layouts
-- Close button interactions and hover states
+- **Average Sampling:** Ingress and egress rates are calculated from byte counter deltas divided by elapsed polling intervals (~3 seconds). They represent moving averages, not instantaneous spikes.
+- **Counter Prioritization:** Modern `inboundBytes` and `outboundBytes` counters take precedence over legacy aliases.
+- **Edge Case Handling:** First samples, counter resets, or request timeouts display an unavailable dash (`-`) until two consecutive samples are recorded.
+- **Dashboard Aggregates:** Total server rates sum active stream rates and report partial coverage when individual stream counters are pending.
 
-## Implemented Features
+## Limitations
 
-### Application Shell
+- **Configuration Persistence:** MediaMTX (as of v1.19.2) does not automatically persist API-created configuration changes to its `mediamtx.yml` file.
+- **HTTPS & Mixed Content:** If the client is hosted on an HTTPS origin, MediaMTX API and playback endpoints must also use HTTPS.
+- **Authentication:** Direct authentication against password-protected MediaMTX API endpoints is currently in development.
 
-- Editable MediaMTX API endpoint (default is `http://localhost:9997`).
-- Editable MediaMTX playback server endpoint (default is `http://localhost:9996` or derived from server configuration).
-- Live API connection indicator based on the configured endpoint.
-- Fluent UI light and dark themes, saved in browser preferences.
-- Collapsible sidebar with navigation across Dashboard, Streams, Playback, and Playback Sync.
+## Roadmap
 
-### Dashboard
+- [x] Docker deployment support
+- [ ] Docker Compose setup for MediaMTX server + client
+- [ ] Authentication support for secured MediaMTX API endpoints
+- [ ] Packaged desktop application (Electron / Tauri)
 
-- Server status card with active API endpoint and protocol listener addresses.
-- Server and stream metrics: uptime, online streams, recording streams, ingress and egress transfer rates, and total readers.
-- Reader counts grouped by protocol, collapsed by default.
-- Last successful metrics refresh time with explicit stale and unavailable indicators.
-- MediaMTX configuration summary grouped into general, network, service access, diagnostics, playback, and path default sections.
-- Raw configuration JSON drawer loaded on demand directly from the MediaMTX API.
-- Clear loading and error states for dashboard API data.
+## Contributing
 
-### Streams Workspace
+Contributions, feedback, and issue reports are welcome:
 
-- Search and protocol filters for finding streams quickly.
-- Table, and multi-player grid views.
-- Sortable stream table with status, protocol, track count, reader count, recording status, ingress and egress rates, and stream actions.
-- Recording status badges displaying whether a stream is actively recording.
-- Start and stop recording buttons for online streams with confirmation dialogs.
-- Card view actions for playback, grid assignment, details, edit, delete, reader inspection, and source kick where available.
-- Add stream drawer with protocol detection, stream name input, source URI validation, and MediaMTX path creation.
-- Edit and delete flows for configured streams.
-- Stream details drawer with source details, track configurations, active readers, and generated playback URLs.
-- Active readers and viewer details drawers for connected clients.
-- Multi-player live grid with 1x1, 2x2, 3x3, and 4x4 layouts plus drag-and-drop stream assignment.
-- Move a live player to another grid slot using drag and drop button.
-
-### Live Stream Playback
-
-- Browser playback starts with WebRTC WHEP for ultra-low latency.
-- Automatic fallback to HLS if WebRTC setup fails or times out.
-- HLS playback uses native browser HLS where available and `hls.js` otherwise.
-- Single-player drawer for quick live monitoring without leaving the stream list.
-- Generated playback URLs for WebRTC WHEP, HLS, RTSP, RTMP, and SRT formats based on the configured MediaMTX host and listener ports.
-
-### Recorded File Playback
-
-- Dedicated playback page for browsing and watching recorded video files.
-- Stream selector listing recorded paths with active recording indicators.
-- Quick toggle to start or stop recording for any selected stream.
-- File list displaying recorded segments with start time, duration, and file size.
-- Video viewer with custom seek bar, play and pause controls, and time displays.
-- Playback rate selection (0.5x, 1x, 1.5x, 2x) for faster or slower review.
-- Autoplay option that automatically advances to the next chronological file.
-- Direct MP4 download option to save recording files to local disk.
-- Helpful status messages when the playback service is disabled or unreachable.
-
-### Synchronized Multi-Stream Playback
-
-- Playback sync workspace for reviewing multiple recorded streams side by side.
-- Flexible grid layouts for up to four streams, featuring drag-and-drop catalog assignment.
-- Calendar day selector to browse recorded footage across different dates.
-- Interactive multi-track timeline showing recording intervals for all active stream slots.
-- Synchronized playback controller with a shared clock to keep all video slots in lockstep.
-- Timeline scrubbing that seeks all active streams simultaneously to the exact same point in time.
-- Unified play, pause, and time tracking across every active slot.
-
-### Transfer Rates
-
-Dashboard, table, cards, stream details, and the single-player drawer share one in-memory rate sample per path. Ingress is received by MediaMTX, and egress is sent by MediaMTX. Rates use counter deltas divided by the measured elapsed time, normally around three seconds, formatted as B/s, KiB/s, or MiB/s. They are interval averages, not instantaneous bitrate measurements.
-
-Modern `inboundBytes`/`outboundBytes` counters take precedence over legacy aliases. Raw counters remain unchanged. The first sample, missing counters, counter resets, lifecycle changes, and failed requests display an unavailable dash. Unchanged valid counters display `0 B/s`. Samples expire after six seconds, and recovery needs two fresh samples. Dashboard rates sum individual path rates and indicate partial coverage while samples are missing.
-
-### Limitations
-
-MediaMTX v1.19.2 does not automatically save API-driven configuration changes to its `mediamtx.yml` config file. For that reason, this browser client focuses on viewing configuration, playing live streams, reviewing recorded footage, and managing runtime paths. It does not manage server configuration files directly.
-
-Authentication is not implemented yet. It is planned for a future release.
-
-### TODO
-
-- [x] Add Docker support for running the client.
-- [ ] Added Docker Compose support for running the MediaMTX server with the client.
-- [ ] Provide a prebuilt executable or packaged desktop app.
-- [ ] Add authentication support for secured MediaMTX API endpoints.
-
-## Contributions
-
-Feedback is welcome, especially from people using the client with real MediaMTX setups.
-Testing notes are very helpful across different browsers, protocols, and server configurations.
-Usability feedback, stream workflow feedback, and deployment feedback help guide what should improve next.
-Feature requests are easiest to act on when they include the use case and the expected behavior.
-Focused pull requests are appreciated.
+- Report bugs with browser, MediaMTX version, and error details.
+- Submit feature suggestions with specific operational use cases.
+- Open pull requests for targeted bug fixes and feature additions.
