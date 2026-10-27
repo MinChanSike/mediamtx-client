@@ -59,7 +59,7 @@ const useStyles = makeStyles({
   },
   toolbarFreshness: {
     position: "absolute",
-    bottom: "0px",
+    bottom: "-4px",
     right: "22px",
   },
   content: {
@@ -120,7 +120,8 @@ export default function StreamsPage() {
     recordingStream,
     streams,
   );
-  const latestDeleteStream = resolveLatestDetailsStream(deleteStream, streams) ?? deleteStream;
+  const latestDeleteStream =
+    resolveLatestDetailsStream(deleteStream, streams) ?? deleteStream;
   const deleteWillStopRecording = latestDeleteStream
     ? isStreamRecordingEnabled(latestDeleteStream)
     : false;
@@ -128,7 +129,8 @@ export default function StreamsPage() {
     ? !!getSourceKickTarget(latestDeleteStream)
     : false;
   const deleteWillRemoveConfig = !!latestDeleteStream?.isConfigured;
-  const deleteWillRemoveOrphanRuntimePath = !!latestDeleteStream && !deleteWillRemoveConfig && !deleteWillKickSource;
+  const deleteWillRemoveOrphanRuntimePath =
+    !!latestDeleteStream && !deleteWillRemoveConfig && !deleteWillKickSource;
   const willStartRecording = recordingStream
     ? !isStreamRecordingEnabled(recordingStream)
     : false;
@@ -343,7 +345,9 @@ export default function StreamsPage() {
             <DialogContent>
               {latestDeleteStream && (
                 <div className="space-y-2">
-                  <Text block>{`Delete stream "${latestDeleteStream.name}" from the server?`}</Text>
+                  <Text
+                    block
+                  >{`Delete stream "${latestDeleteStream.name}" from the server?`}</Text>
                   <Text block size={200}>
                     {deleteWillRemoveConfig
                       ? "Its path configuration will be removed."
@@ -354,7 +358,9 @@ export default function StreamsPage() {
                   {(deleteWillStopRecording || deleteWillKickSource) && (
                     <Text block size={200}>
                       {`This will ${[
-                        deleteWillStopRecording ? "stop the active recording" : null,
+                        deleteWillStopRecording
+                          ? "stop the active recording"
+                          : null,
                         deleteWillKickSource ? "kick the current source" : null,
                       ]
                         .filter(Boolean)

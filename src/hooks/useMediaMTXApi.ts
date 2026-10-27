@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import useSWR, { mutate as mutateSWR } from 'swr';
 import { getCompleteServerConfig, getGlobalConfig } from '@src/api/configApi';
 import { getServerInfo, type ServerInfo } from '@src/api/serverInfoApi';
@@ -364,6 +364,15 @@ export async function refreshServerInfoNow(): Promise<void> {
   await mutateResource(serverInfoKey(serverUrl), () => loadServerInfo(serverUrl));
 }
 
+export function resetMetricsRefreshTimer(): void {
+  useMediaMTXApiStore.getState().resetMetricsTimer();
+}
+
+export async function refreshMetricsNow(): Promise<void> {
+  resetMetricsRefreshTimer();
+  await Promise.all([refreshPathsNow(), refreshServerInfoNow()]);
+}
+
 export async function refreshGlobalConfigNow(): Promise<void> {
   const serverUrl = getCurrentServerUrl();
   await mutateResource(globalConfigKey(serverUrl), () => loadGlobalConfig(serverUrl));
@@ -402,13 +411,24 @@ export function mountGlobalConfigConsumer() {
   return () => undefined;
 }
 
+const defaultLiveRefreshOptions = {
+  ...swrOptions,
+  refreshInterval: LIVE_REFRESH_MS,
+};
+
 export function useStoreBackedPaths(): ResourceResult<PathList> {
   const resource = useMediaMTXApiStore((state) => state.paths);
   const serverUrl = useApiStoreServerUrl();
+  const refreshEpoch = useMediaMTXApiStore((state) => state.metricsRefreshEpoch);
+  const refreshInterval = useCallback(() => {
+    void refreshEpoch;
+    return LIVE_REFRESH_MS;
+  }, [refreshEpoch]);
 
   useSWR(pathsKey(serverUrl), () => loadPaths(serverUrl), {
-    ...swrOptions,
-    refreshInterval: LIVE_REFRESH_MS,
+    ...defaultLiveRefreshOptions,
+    dedupingInterval: 0,
+    refreshInterval,
   });
 
   return makeResourceResult(resource, true, refreshPathsNow);
@@ -417,10 +437,16 @@ export function useStoreBackedPaths(): ResourceResult<PathList> {
 export function useStoreBackedServerInfo(): ResourceResult<ServerInfo> {
   const resource = useMediaMTXApiStore((state) => state.serverInfo);
   const serverUrl = useApiStoreServerUrl();
+  const refreshEpoch = useMediaMTXApiStore((state) => state.metricsRefreshEpoch);
+  const refreshInterval = useCallback(() => {
+    void refreshEpoch;
+    return LIVE_REFRESH_MS;
+  }, [refreshEpoch]);
 
   useSWR(serverInfoKey(serverUrl), () => loadServerInfo(serverUrl), {
-    ...swrOptions,
-    refreshInterval: LIVE_REFRESH_MS,
+    ...defaultLiveRefreshOptions,
+    dedupingInterval: 0,
+    refreshInterval,
   });
 
   return makeResourceResult(resource, true, refreshServerInfoNow);
